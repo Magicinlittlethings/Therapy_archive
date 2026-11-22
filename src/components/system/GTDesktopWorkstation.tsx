@@ -10,12 +10,7 @@ import {
   Shield,
   Volume2,
   VolumeX,
-  Play,
-  Pause,
-  X,
-  Home,
-  UserCheck,
-  Lock
+  Home
 } from 'lucide-react';
 
 interface GTDesktopWorkstationProps {
@@ -41,18 +36,6 @@ export const GTDesktopWorkstation: React.FC<GTDesktopWorkstationProps> = ({ chil
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  // Determine current window title
-  const getWindowTitle = () => {
-    if (location.pathname.startsWith('/sessions/')) return 'Finder // Session Case File';
-    if (location.pathname.startsWith('/sessions')) return 'Finder // Sessions Archive';
-    if (location.pathname.startsWith('/my-sessions') && !location.pathname.includes('/notes')) return 'Finder // My Personal Dossier';
-    if (location.pathname.includes('/notes')) return 'Therapy Notes // Patient Reflection';
-    if (location.pathname.startsWith('/admin')) return persona === 'dj' ? 'Aniko DJ Deck // Track Requests' : 'Curator Terminal // Telemetry & Curation';
-    if (location.pathname.startsWith('/followed')) return 'Finder // Followed Sessions';
-    if (location.pathname === '/') return 'Group Therapy // Main Screen';
-    return 'Finder';
-  };
-
   return (
     <div className={`gt-desktop-workspace ${isAppOpen ? 'app-active' : 'wallpaper-active'}`}>
       
@@ -73,19 +56,6 @@ export const GTDesktopWorkstation: React.FC<GTDesktopWorkstationProps> = ({ chil
           and returns immediately to the main screen.
         */
         <div className="fullscreen-os-window">
-          {/* Mobile Window Top Exit Bar for Easy One-Tap Close on Touch/Mobile Screens */}
-          <div className="gt-mobile-window-header">
-            <span className="gt-mobile-window-title">{getWindowTitle()}</span>
-            <button
-              onClick={() => navigate('/')}
-              className="gt-mobile-window-close-btn"
-              title="Close window and return to home"
-            >
-              <X size={14} />
-              <span>Close</span>
-            </button>
-          </div>
-
           {/* Window Interior Content */}
           <div className="fullscreen-window-body">
             {children}
@@ -451,46 +421,6 @@ export const GTDesktopWorkstation: React.FC<GTDesktopWorkstationProps> = ({ chil
           justify-content: center;
         }
 
-        @media (max-width: 820px) {
-          .os-dock-container {
-            bottom: 8px;
-            max-width: calc(100vw - 12px);
-          }
-          .os-dock {
-            padding: 6px 10px;
-            gap: 8px;
-            border-radius: 16px;
-            max-width: 100%;
-            overflow-x: auto;
-          }
-          .os-dock-app {
-            padding: 2px;
-          }
-          .os-dock-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 9px;
-          }
-          .os-dock-icon svg {
-            width: 18px !important;
-            height: 18px !important;
-          }
-          .fullscreen-titlebar {
-            height: 36px;
-            padding: 0 10px;
-          }
-          .fullscreen-window-body {
-            height: calc(100vh - 36px);
-          }
-          .fullscreen-exit-btn span {
-            display: none;
-          }
-          .fullscreen-exit-btn {
-            padding: 3px 6px;
-          }
-        .gt-mobile-window-header {
-          display: none;
-        }
         .gt-mobile-bottom-nav {
           display: none;
         }
@@ -501,47 +431,10 @@ export const GTDesktopWorkstation: React.FC<GTDesktopWorkstationProps> = ({ chil
             display: none !important;
           }
 
-          .gt-mobile-window-header {
-            display: flex;
-            align-items: center;
-            justifyContent: space-between;
-            padding: 8px 14px;
-            background-color: #060806;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            font-family: var(--font-metadata);
-            font-size: 0.75rem;
-            color: var(--gt-cream);
-            z-index: 50;
-            flex-shrink: 0;
-          }
-
-          .gt-mobile-window-title {
-            color: var(--gt-acid);
-            font-weight: 700;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 70vw;
-          }
-
-          .gt-mobile-window-close-btn {
-            background-color: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: var(--gt-cream);
-            padding: 4px 10px;
-            border-radius: 4px;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.72rem;
-            font-family: var(--font-metadata);
-            cursor: pointer;
-          }
-
           .gt-mobile-bottom-nav {
             display: flex;
             align-items: center;
-            justifyContent: space-around;
+            justify-content: space-around;
             position: fixed;
             bottom: 0;
             left: 0;
