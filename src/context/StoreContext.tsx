@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import {
   Session,
   SessionMaterial,
+  PrivateTherapyNote,
+  CommunitySubmission,
   TherapyNote,
   UserAttendance,
   SessionFollow,
@@ -13,14 +15,17 @@ import {
   AttendanceState,
   MaterialType,
   NoteReport,
-  TrackIdInquiry
+  TrackIdInquiry,
+  AttendanceScenario
 } from '../types';
 import {
   CURATED_SESSIONS,
   CURATED_MATERIALS,
-  SAMPLE_THERAPY_NOTES,
+  SAMPLE_PRIVATE_NOTES,
+  SAMPLE_COMMUNITY_SUBMISSIONS,
   DEFAULT_NOTE_REPORTS,
-  DEFAULT_TRACK_INQUIRIES
+  DEFAULT_TRACK_INQUIRIES,
+  DEFAULT_ATTENDANCE_SCENARIOS
 } from '../data/seedData';
 import { soundboardEngine } from '../utils/audioSynth';
 
@@ -35,7 +40,9 @@ interface StoreContextType {
   closeRoleTour: () => void;
   sessions: Session[];
   materials: SessionMaterial[];
-  notes: TherapyNote[];
+  privateNotes: PrivateTherapyNote[];
+  communitySubmissions: CommunitySubmission[];
+  notes: TherapyNote[]; // Combined legacy list
   reports: NoteReport[];
   trackInquiries: TrackIdInquiry[];
   attendances: Record<string, UserAttendance>;
@@ -44,13 +51,15 @@ interface StoreContextType {
   contentRequests: ContentRequest[];
   notifications: NotificationItem[];
   saveNote: (noteData: Partial<TherapyNote> & { sessionId: string }) => string;
+  savePrivateNote: (noteData: Partial<PrivateTherapyNote> & { sessionId: string }) => string;
   deleteNote: (id: string) => void;
   submitNoteForModeration: (id: string) => void;
   submitNoteToCommunity: (noteId: string, options: { isAnonymous: boolean; includePolaroids: boolean }) => void;
-  withdrawCommunitySubmission: (noteId: string) => void;
+  withdrawCommunitySubmission: (noteIdOrSubId: string) => void;
   approveNote: (id: string, feedback?: string) => void;
   rejectNote: (id: string, feedback?: string) => void;
   togglePinNoteByDj: (id: string) => void;
+  resonateWithSubmission: (id: string) => void;
   attachPolaroidToNote: (noteId: string, polaroid: AttachedPolaroid) => void;
   removePolaroidFromNote: (noteId: string, polaroidId: string) => void;
   toggleFollow: (sessionId: string, preferences?: { notifyMaterials: boolean; notifyRecaps: boolean }) => boolean;
@@ -91,22 +100,33 @@ interface StoreContextType {
   nextTourStep: () => void;
   prevTourStep: () => void;
   closeTour: () => void;
+
+  // Predictable Attendance Scenarios & Interactive Verification
+  attendanceScenarios: AttendanceScenario[];
+  activeScenarioId: string;
+  selectAttendanceScenario: (id: string) => void;
+  isVerifyModalOpen: boolean;
+  openVerifyModal: () => void;
+  closeVerifyModal: () => void;
+  simulateEmailVerification: (email: string) => { success: boolean; message: string; persona: DemoPersona };
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  PERSONA: 'gt_demo_persona',
-  NOTES: 'gt_demo_therapy_notes_v9',
-  FOLLOWS: 'gt_demo_follows',
-  ATTENDANCE: 'gt_demo_attendance',
-  MATERIALS: 'gt_demo_materials',
-  RATINGS: 'gt_demo_ratings',
-  REQUESTS: 'gt_demo_requests',
-  NOTIFICATIONS: 'gt_demo_notifications_v3',
-  TOUR_SEEN: 'gt_demo_tour_seen',
-  REPORTS: 'gt_demo_reports_v1',
-  TRACK_INQUIRIES: 'gt_demo_track_inquiries_v1'
+  PERSONA: 'gt_demo_persona_v2',
+  PRIVATE_NOTES: 'gt_demo_priv_notes_v2',
+  COMMUNITY_SUBMISSIONS: 'gt_demo_comm_subs_v2',
+  FOLLOWS: 'gt_demo_follows_v2',
+  ATTENDANCE: 'gt_demo_attendance_v2',
+  MATERIALS: 'gt_demo_materials_v2',
+  RATINGS: 'gt_demo_ratings_v2',
+  REQUESTS: 'gt_demo_requests_v2',
+  NOTIFICATIONS: 'gt_demo_notifications_v4',
+  TOUR_SEEN: 'gt_demo_tour_seen_v2',
+  REPORTS: 'gt_demo_reports_v2',
+  TRACK_INQUIRIES: 'gt_demo_track_inquiries_v2',
+  ACTIVE_SCENARIO: 'gt_demo_scenario_id_v2'
 };
 
 const DEFAULT_ATTENDANCES: Record<string, UserAttendance> = {
@@ -169,8 +189,8 @@ const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
   {
     id: 'notif-3',
     sessionId: 'gt-xv',
-    title: 'Attendance Verified via Door Scan',
-    message: 'Your ticket check-in for Group Therapy XV was matched automatically from the door export.',
+    title: 'Attendance Verified via Door Check-in',
+    message: 'Your ticket check-in for Group Therapy XV was matched from the door scanner export.',
     date: '2026-11-07',
     isRead: false,
     actionUrl: '/my-sessions'
@@ -193,14 +213,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return (saved as DemoPersona) || 'patient';
   });
 
+  const [activeScenarioId, setActiveScenarioId] = useState<string>(() => {
+    return localStorage.getItem(STORAGE_KEYS.ACTIVE_SCENARIO) || 'scen-lami';
+  });
+
   const [isReloadingRole, setIsReloadingRole] = useState(false);
   const [reloadingRoleName, setReloadingRoleName] = useState('');
 
-  // Tour State - Automatically pops up on page load
-  const [showTour, setShowTour] = useState(true);
+  // Tour State
+  const [showTour, setShowTour] = useState(false);
   const [tourStep, setTourStep] = useState(0);
 
-  // Role Explanatory Tour State - Pops up per role switched to
+  // Role Explanatory Tour State
   const [roleTourModalOpen, setRoleTourModalOpen] = useState(() => {
     return Boolean(sessionStorage.getItem('gt_role_switched'));
   });
@@ -213,6 +237,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return null;
   });
 
+  // Interactive Verification Gate Modal State
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
+  const openVerifyModal = () => setIsVerifyModalOpen(true);
+  const closeVerifyModal = () => setIsVerifyModalOpen(false);
+
   const openRoleTour = (role: DemoPersona) => {
     setRoleTourPersona(role);
     setRoleTourModalOpen(true);
@@ -222,13 +251,72 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setRoleTourModalOpen(false);
   };
 
-  const [notes, setNotes] = useState<TherapyNote[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.NOTES);
+  // Distinct Collections: Private Notes vs Community Submissions
+  const [privateNotes, setPrivateNotes] = useState<PrivateTherapyNote[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.PRIVATE_NOTES);
     if (saved) {
       try { return JSON.parse(saved); } catch (e) { /* fallback */ }
     }
-    return SAMPLE_THERAPY_NOTES;
+    return SAMPLE_PRIVATE_NOTES;
   });
+
+  const [communitySubmissions, setCommunitySubmissions] = useState<CommunitySubmission[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.COMMUNITY_SUBMISSIONS);
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { /* fallback */ }
+    }
+    return SAMPLE_COMMUNITY_SUBMISSIONS;
+  });
+
+  // Combined legacy notes representation for components expecting flat notes
+  const notes = useMemo<TherapyNote[]>(() => {
+    const privCombined: TherapyNote[] = privateNotes.map(p => {
+      const existingSub = communitySubmissions.find(s => s.originalNoteId === p.id);
+      return {
+        ...p,
+        visibility: existingSub ? 'public_submission' as const : 'private' as const,
+        submissionStatus: existingSub ? existingSub.moderationStatus : 'none' as const,
+        moderationStatus: existingSub ? existingSub.moderationStatus : 'none' as const,
+        likesCount: existingSub?.resonanceCount || 0,
+        isLiked: existingSub?.isResonated || false
+      };
+    });
+
+    const commOnlyCombined: TherapyNote[] = communitySubmissions
+      .filter(s => !s.originalNoteId || !privateNotes.some(p => p.id === s.originalNoteId))
+      .map(s => ({
+        id: s.id,
+        sessionId: s.sessionId,
+        sessionCode: s.sessionCode,
+        sessionTitle: s.sessionTitle,
+        artistName: s.artistName,
+        noteType: s.noteType,
+        title: s.title,
+        content: s.content,
+        authorDisplayName: s.authorDisplayName,
+        polaroids: s.polaroids,
+        visibility: 'public_submission' as const,
+        submissionStatus: s.moderationStatus,
+        moderationStatus: s.moderationStatus,
+        moderationFeedback: s.moderationFeedback,
+        isDraft: false,
+        pinnedByDj: s.pinnedByDj,
+        isLiked: s.isResonated,
+        likesCount: s.resonanceCount,
+        isFlagged: s.isFlagged,
+        reportCount: s.reportCount,
+        reportedBy: s.reportedBy,
+        flagReason: s.flagReason,
+        trackRequested: s.trackRequested,
+        tags: s.tags,
+        djResponse: s.djResponse,
+        isSimulatedDemo: s.isSimulatedDemo,
+        createdAt: s.submittedAt,
+        updatedAt: s.submittedAt
+      }));
+
+    return [...privCombined, ...commOnlyCombined];
+  }, [privateNotes, communitySubmissions]);
 
   const [follows, setFollows] = useState<Record<string, SessionFollow>>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.FOLLOWS);
@@ -337,7 +425,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
   };
 
-  // Device Mode: Automatically responsive based on viewport width
+  // Device Mode: Responsive
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'mobile'>(() => {
     return typeof window !== 'undefined' && window.innerWidth <= 820 ? 'mobile' : 'desktop';
   });
@@ -351,10 +439,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Mobile App Navigation: 'home' | 'files' | 'browser' | 'notes' | 'alerts' | 'deck' | 'settings'
   const [mobileApp, setMobileApp] = useState<'home' | 'files' | 'browser' | 'notes' | 'alerts' | 'deck' | 'settings'>('home');
 
-  // Live Soundboard Player State
+  // Soundboard Web Audio Synth
   const [isSoundboardPlaying, setIsSoundboardPlaying] = useState(false);
   const toggleSoundboardPlay = () => setIsSoundboardPlaying(prev => !prev);
 
@@ -366,15 +453,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [isSoundboardPlaying]);
 
-  // Reload when Role is Switched - returns to landing page
+  // Reload when Role is Switched
   const setPersona = (newPersona: DemoPersona) => {
     if (newPersona === persona) return;
 
     const roleLabels: Record<DemoPersona, string> = {
-      patient: 'PATIENT DOSSIER',
-      visitor: 'PUBLIC VISITOR VIEW',
+      patient: 'VERIFIED PATIENT DOSSIER (Lami Adeyemi)',
+      follower: 'COMMUNITY FOLLOWER (Unverified Attendance)',
+      visitor: 'PUBLIC VISITOR (Unregistered)',
       dj: 'RESIDENT DJ STATION // ANIKO',
-      admin: 'GT MASTER CURATION TERMINAL'
+      admin: 'GT CURATOR TERMINAL (Staff)'
     };
 
     setReloadingRoleName(roleLabels[newPersona]);
@@ -383,15 +471,121 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     sessionStorage.setItem('gt_role_switched', newPersona);
 
     setTimeout(() => {
-      // Reload and return to landing page
       window.location.href = '/';
-    }, 600);
+    }, 550);
   };
 
-  // Sync state
+  // Select Attendance Scenario
+  const selectAttendanceScenario = (scenarioId: string) => {
+    const scen = DEFAULT_ATTENDANCE_SCENARIOS.find(s => s.id === scenarioId) || DEFAULT_ATTENDANCE_SCENARIOS[0];
+    setActiveScenarioId(scen.id);
+    localStorage.setItem(STORAGE_KEYS.ACTIVE_SCENARIO, scen.id);
+
+    if (scen.id === 'scen-lami') {
+      setAttendances({
+        'gt-xii': { sessionId: 'gt-xii', state: 'attended', ticketHash: 'TIX-GT12-8849-VERIFIED', verifiedAt: '2026-02-28T01:30:00Z', checkInSource: 'door_scan_tix' },
+        'gt-xv': { sessionId: 'gt-xv', state: 'attended', ticketHash: 'TIX-GT15-9921-VERIFIED', verifiedAt: '2026-11-06T23:15:00Z', checkInSource: 'door_scan_tix' }
+      });
+      setPersona('patient');
+    } else if (scen.id === 'scen-group') {
+      setAttendances({
+        'gt-xv': { sessionId: 'gt-xv', state: 'attended', ticketHash: 'TIX-GT15-GROUP-01', verifiedAt: '2026-11-06T23:45:00Z', checkInSource: 'door_scan_tix' }
+      });
+      setPersona('patient');
+    } else if (scen.id === 'scen-noshow') {
+      setAttendances({
+        'gt-viii': { sessionId: 'gt-viii', state: 'not_attended', ticketHash: 'TIX-GT08-PURCHASED', ticketPurchasedOnly: true }
+      });
+      setPersona('follower');
+    } else if (scen.id === 'scen-guestlist') {
+      setAttendances({
+        'gt-x': { sessionId: 'gt-x', state: 'attended', ticketHash: 'GUEST-GT10-NGOZI', verifiedAt: '2025-11-07T00:30:00Z', checkInSource: 'guestlist' }
+      });
+      setPersona('patient');
+    } else if (scen.id === 'scen-cash') {
+      setAttendances({
+        'gt-iv': { sessionId: 'gt-iv', state: 'pending_verification', checkInSource: 'curator_archival' }
+      });
+      setPersona('follower');
+    } else if (scen.id === 'scen-linked-email') {
+      setAttendances({
+        'gt-xii': { sessionId: 'gt-xii', state: 'attended', ticketHash: 'TIX-GT12-8849-VERIFIED', verifiedAt: '2026-02-28T01:30:00Z', checkInSource: 'door_scan_tix' },
+        'gt-xv': { sessionId: 'gt-xv', state: 'attended', ticketHash: 'TIX-GT15-9921-VERIFIED', verifiedAt: '2026-11-06T23:15:00Z', checkInSource: 'door_scan_tix' },
+        'gt-v': { sessionId: 'gt-v', state: 'attended', ticketHash: 'TIX-GT05-LINKED-CORP', verifiedAt: '2024-08-24T23:00:00Z', checkInSource: 'door_scan_tix' }
+      });
+      setPersona('patient');
+    }
+  };
+
+  // Simulate Email Verification
+  const simulateEmailVerification = (email: string) => {
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (cleanEmail === 'lami@grouptherapy.live' || cleanEmail === 'lami.work@gmail.com') {
+      setPersonaState('patient');
+      localStorage.setItem(STORAGE_KEYS.PERSONA, 'patient');
+      setAttendances({
+        'gt-xii': { sessionId: 'gt-xii', state: 'attended', ticketHash: 'TIX-GT12-8849-VERIFIED', verifiedAt: '2026-02-28T01:30:00Z', checkInSource: 'door_scan_tix' },
+        'gt-xv': { sessionId: 'gt-xv', state: 'attended', ticketHash: 'TIX-GT15-9921-VERIFIED', verifiedAt: '2026-11-06T23:15:00Z', checkInSource: 'door_scan_tix' }
+      });
+      return {
+        success: true,
+        message: 'Attendance verified via door scan logs for GT-XII and GT-XV. Patient Dossier unlocked.',
+        persona: 'patient' as DemoPersona
+      };
+    } else if (cleanEmail === 'chidi@grouptherapy.live') {
+      setPersonaState('patient');
+      localStorage.setItem(STORAGE_KEYS.PERSONA, 'patient');
+      setAttendances({
+        'gt-xv': { sessionId: 'gt-xv', state: 'attended', ticketHash: 'TIX-GT15-GROUP-01', verifiedAt: '2026-11-06T23:45:00Z', checkInSource: 'door_scan_tix' }
+      });
+      return {
+        success: true,
+        message: '1 physical attendance verified for GT-XV. 2 companion claim passes available in your dossier.',
+        persona: 'patient' as DemoPersona
+      };
+    } else if (cleanEmail === 'ngozi@grouptherapy.live') {
+      setPersonaState('patient');
+      localStorage.setItem(STORAGE_KEYS.PERSONA, 'patient');
+      setAttendances({
+        'gt-x': { sessionId: 'gt-x', state: 'attended', ticketHash: 'GUEST-GT10-NGOZI', verifiedAt: '2025-11-07T00:30:00Z', checkInSource: 'guestlist' }
+      });
+      return {
+        success: true,
+        message: 'Verified attendance matched via door manager guest list for GT-X.',
+        persona: 'patient' as DemoPersona
+      };
+    } else if (cleanEmail === 'alex@grouptherapy.live') {
+      setPersonaState('follower');
+      localStorage.setItem(STORAGE_KEYS.PERSONA, 'follower');
+      setAttendances({
+        'gt-viii': { sessionId: 'gt-viii', state: 'not_attended', ticketPurchasedOnly: true }
+      });
+      return {
+        success: true,
+        message: 'Ticket purchase confirmed for GT-VIII, but no physical door check-in was recorded. Registered as Community Follower.',
+        persona: 'follower' as DemoPersona
+      };
+    } else {
+      // Unrecognized email: offer follower registration
+      setPersonaState('follower');
+      localStorage.setItem(STORAGE_KEYS.PERSONA, 'follower');
+      return {
+        success: false,
+        message: 'No physical door check-in record found for this address. Registered as Community Follower. You may link another purchase email or submit an archival attendance claim.',
+        persona: 'follower' as DemoPersona
+      };
+    }
+  };
+
+  // Sync state to localStorage
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(notes));
-  }, [notes]);
+    localStorage.setItem(STORAGE_KEYS.PRIVATE_NOTES, JSON.stringify(privateNotes));
+  }, [privateNotes]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.COMMUNITY_SUBMISSIONS, JSON.stringify(communitySubmissions));
+  }, [communitySubmissions]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.FOLLOWS, JSON.stringify(follows));
@@ -427,9 +621,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Attendance lookup
   const getAttendance = (sessionId: string): AttendanceState => {
-    if (persona === 'visitor') return 'not_attended';
+    if (persona === 'visitor' || persona === 'follower') return 'not_attended';
     if (persona === 'dj') {
-      // DJ was present at all sessions where they played
       return 'attended';
     }
     const record = attendances[sessionId];
@@ -443,7 +636,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const toggleFollow = (sessionId: string, preferences?: { notifyMaterials: boolean; notifyRecaps: boolean }): boolean => {
     if (persona === 'visitor') {
-      alert('You are currently viewing as a Public Visitor. Switch to "Patient" in the top bar to follow sessions.');
+      alert('You are currently viewing as an unauthenticated visitor. Register as a Community Follower or Patient to follow sessions.');
       return false;
     }
 
@@ -476,23 +669,24 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const saveNote = (noteData: Partial<TherapyNote> & { sessionId: string }): string => {
+  // Save Private Note (Strictly updates privateNotes collection)
+  const savePrivateNote = (noteData: Partial<PrivateTherapyNote> & { sessionId: string }): string => {
     const targetSession = CURATED_SESSIONS.find(s => s.id === noteData.sessionId);
-    const existingIndex = notes.findIndex(n => n.id === noteData.id);
+    const existingIndex = privateNotes.findIndex(n => n.id === noteData.id);
     const now = new Date().toISOString();
 
     if (existingIndex >= 0) {
-      const updated = [...notes];
+      const updated = [...privateNotes];
       updated[existingIndex] = {
         ...updated[existingIndex],
         ...noteData,
         updatedAt: now
       };
-      setNotes(updated);
+      setPrivateNotes(updated);
       return updated[existingIndex].id;
     } else {
-      const newId = `note-${Date.now()}`;
-      const newNote: TherapyNote = {
+      const newId = `priv-note-${Date.now()}`;
+      const newNote: PrivateTherapyNote = {
         id: newId,
         sessionId: noteData.sessionId,
         sessionCode: targetSession?.sessionCode || null,
@@ -502,137 +696,147 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         title: noteData.title || undefined,
         content: noteData.content || '',
         promptUsed: noteData.promptUsed,
-        visibility: noteData.visibility || 'private',
-        moderationStatus: noteData.moderationStatus || 'none',
+        authorDisplayName: persona === 'dj' ? 'Aniko' : 'Lami Adeyemi',
         isDraft: noteData.isDraft ?? false,
+        polaroids: noteData.polaroids || [],
         createdAt: now,
         updatedAt: now
       };
-      setNotes(prev => [newNote, ...prev]);
+      setPrivateNotes(prev => [newNote, ...prev]);
       return newId;
     }
   };
 
+  // Backward-compatible saveNote wrapper
+  const saveNote = (noteData: Partial<TherapyNote> & { sessionId: string }): string => {
+    return savePrivateNote(noteData as Partial<PrivateTherapyNote> & { sessionId: string });
+  };
+
   const deleteNote = (id: string) => {
-    setNotes(prev => prev.filter(n => n.id !== id));
+    setPrivateNotes(prev => prev.filter(n => n.id !== id));
+    // Also remove from community submissions if linked
+    setCommunitySubmissions(prev => prev.filter(s => s.originalNoteId !== id && s.id !== id));
   };
 
   const submitNoteForModeration = (id: string) => {
-    setNotes(prev => prev.map(n => {
-      if (n.id === id) {
-        return {
-          ...n,
-          visibility: 'public_submission',
-          submissionStatus: 'pending',
-          moderationStatus: 'pending',
-          submittedAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-      }
-      return n;
-    }));
+    submitNoteToCommunity(id, { isAnonymous: false, includePolaroids: true });
   };
 
+  // Deliberately Submit to Community (Creates separate CommunitySubmission record)
   const submitNoteToCommunity = (noteId: string, options: { isAnonymous: boolean; includePolaroids: boolean }) => {
-    setNotes(prev => prev.map(n => {
-      if (n.id === noteId) {
-        return {
-          ...n,
-          visibility: 'public_submission',
-          submissionStatus: 'pending',
-          moderationStatus: 'pending',
-          isAnonymousSubmission: options.isAnonymous,
-          includePolaroidsInSubmission: options.includePolaroids,
-          submittedAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-      }
-      return n;
-    }));
+    const priv = privateNotes.find(n => n.id === noteId);
+    if (!priv) return;
 
-    const target = notes.find(n => n.id === noteId);
+    const existingSubIndex = communitySubmissions.findIndex(s => s.originalNoteId === noteId);
+    const now = new Date().toISOString();
+
+    const submissionData: CommunitySubmission = {
+      id: existingSubIndex >= 0 ? communitySubmissions[existingSubIndex].id : `comm-sub-${Date.now()}`,
+      originalNoteId: priv.id,
+      sessionId: priv.sessionId,
+      sessionCode: priv.sessionCode,
+      sessionTitle: priv.sessionTitle,
+      artistName: priv.artistName,
+      noteType: priv.noteType,
+      title: priv.title || 'Untitled Reflection',
+      content: priv.content,
+      authorDisplayName: options.isAnonymous ? 'Anonymous Dancer' : priv.authorDisplayName,
+      isAnonymous: options.isAnonymous,
+      includePolaroids: options.includePolaroids,
+      polaroids: options.includePolaroids ? priv.polaroids : [],
+      moderationStatus: 'pending',
+      submittedAt: now,
+      isResonated: false
+    };
+
+    if (existingSubIndex >= 0) {
+      const updated = [...communitySubmissions];
+      updated[existingSubIndex] = submissionData;
+      setCommunitySubmissions(updated);
+    } else {
+      setCommunitySubmissions(prev => [submissionData, ...prev]);
+    }
+
     const newNotif: NotificationItem = {
       id: `notif-${Date.now()}`,
-      sessionId: target?.sessionId || 'gt-xii',
+      sessionId: priv.sessionId,
       title: 'Community Submission Received',
-      message: `Your reflection "${target?.title || 'Reflection'}" was submitted for community curation. Group Therapy curators review all submissions before publication.`,
+      message: `Your reflection "${priv.title || 'Reflection'}" was submitted for collective curation. Group Therapy curators review submissions before publication.`,
       date: new Date().toISOString().split('T')[0],
       isRead: false,
-      actionUrl: `/my-sessions/${target?.sessionId || 'gt-xii'}/notes`
+      actionUrl: `/my-sessions/${priv.sessionId}/notes`
     };
     setNotifications(prev => [newNotif, ...prev]);
   };
 
-  const withdrawCommunitySubmission = (noteId: string) => {
-    setNotes(prev => prev.map(n => {
-      if (n.id === noteId) {
-        return {
-          ...n,
-          visibility: 'private',
-          submissionStatus: 'none',
-          moderationStatus: 'none',
-          updatedAt: new Date().toISOString()
-        };
-      }
-      return n;
-    }));
+  // Withdraw Community Submission (Does NOT touch the private note)
+  const withdrawCommunitySubmission = (noteIdOrSubId: string) => {
+    setCommunitySubmissions(prev => prev.filter(s => s.id !== noteIdOrSubId && s.originalNoteId !== noteIdOrSubId));
   };
 
   const approveNote = (id: string, feedback?: string) => {
-    setNotes(prev => prev.map(n => {
-      if (n.id === id) {
+    setCommunitySubmissions(prev => prev.map(s => {
+      if (s.id === id || s.originalNoteId === id) {
         return {
-          ...n,
+          ...s,
           moderationStatus: 'approved',
           moderationFeedback: feedback || 'Approved for Group Therapy Community Archive.',
-          updatedAt: new Date().toISOString()
+          reviewedAt: new Date().toISOString(),
+          reviewedBy: persona === 'dj' ? 'Aniko (DJ)' : 'Staff Curator'
         };
       }
-      return n;
+      return s;
     }));
-
-    const target = notes.find(n => n.id === id);
-    const newNotif: NotificationItem = {
-      id: `notif-${Date.now()}`,
-      sessionId: target?.sessionId || 'gt-xii',
-      title: 'Therapy Note Approved',
-      message: `Your note "${target?.title || 'Reflection'}" was approved and is now featured on the public Session Case File.`,
-      date: new Date().toISOString().split('T')[0],
-      isRead: false,
-      actionUrl: `/sessions/${target?.sessionId || 'gt-xii'}`
-    };
-    setNotifications(prev => [newNotif, ...prev]);
   };
 
   const rejectNote = (id: string, feedback?: string) => {
-    setNotes(prev => prev.map(n => {
-      if (n.id === id) {
+    setCommunitySubmissions(prev => prev.map(s => {
+      if (s.id === id || s.originalNoteId === id) {
         return {
-          ...n,
+          ...s,
           moderationStatus: 'rejected',
-          moderationFeedback: feedback || 'Returned to private enclave. Feel free to revise.',
-          updatedAt: new Date().toISOString()
+          moderationFeedback: feedback || 'Returned to private enclave with curator notes.',
+          reviewedAt: new Date().toISOString(),
+          reviewedBy: persona === 'dj' ? 'Aniko (DJ)' : 'Staff Curator'
         };
       }
-      return n;
+      return s;
     }));
   };
 
   const togglePinNoteByDj = (id: string) => {
-    setNotes(prev => prev.map(n => {
-      if (n.id === id) {
+    setCommunitySubmissions(prev => prev.map(s => {
+      if (s.id === id || s.originalNoteId === id) {
         return {
-          ...n,
-          pinnedByDj: !n.pinnedByDj,
-          updatedAt: new Date().toISOString()
+          ...s,
+          pinnedByDj: !s.pinnedByDj
         };
       }
-      return n;
+      return s;
     }));
   };
 
+  // Resonate (Quiet acknowledgement without numeric vanity scoreboards)
+  const resonateWithSubmission = (id: string) => {
+    setCommunitySubmissions(prev => prev.map(s => {
+      if (s.id === id || s.originalNoteId === id) {
+        const currentlyResonated = s.isResonated ?? false;
+        return {
+          ...s,
+          isResonated: !currentlyResonated,
+          resonanceCount: currentlyResonated ? Math.max(0, (s.resonanceCount || 1) - 1) : (s.resonanceCount || 0) + 1
+        };
+      }
+      return s;
+    }));
+  };
+
+  const toggleLikeNote = (id: string) => {
+    resonateWithSubmission(id);
+  };
+
   const attachPolaroidToNote = (noteId: string, polaroid: AttachedPolaroid) => {
-    setNotes(prev => prev.map(n => {
+    setPrivateNotes(prev => prev.map(n => {
       if (n.id === noteId) {
         const existing = n.polaroids || [];
         return {
@@ -646,7 +850,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const removePolaroidFromNote = (noteId: string, polaroidId: string) => {
-    setNotes(prev => prev.map(n => {
+    setPrivateNotes(prev => prev.map(n => {
       if (n.id === noteId) {
         return {
           ...n,
@@ -658,52 +862,28 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }));
   };
 
-  const toggleLikeNote = (id: string) => {
-    setNotes(prev => prev.map(n => {
-      if (n.id === id) {
-        const currentlyLiked = n.isLiked ?? false;
-        const currentCount = n.likesCount || 0;
-        return {
-          ...n,
-          isLiked: !currentlyLiked,
-          likesCount: currentlyLiked ? Math.max(0, currentCount - 1) : currentCount + 1
-        };
-      }
-      return n;
-    }));
-  };
-
   const flagNote = (id: string, reason?: string) => {
-    setNotes(prev => prev.map(n => {
-      if (n.id === id) {
-        return {
-          ...n,
-          isFlagged: true,
-          flagReason: reason || 'Flagged by community member for curator review'
-        };
-      }
-      return n;
-    }));
+    reportNote(id, 'other', reason || 'Flagged for curator review');
   };
 
   const unflagNote = (id: string) => {
-    setNotes(prev => prev.map(n => {
-      if (n.id === id) {
+    setCommunitySubmissions(prev => prev.map(s => {
+      if (s.id === id || s.originalNoteId === id) {
         return {
-          ...n,
+          ...s,
           isFlagged: false,
           flagReason: undefined
         };
       }
-      return n;
+      return s;
     }));
   };
 
+  // Report creates a formal moderation case; does NOT automatically remove reflection
   const reportNote = (noteId: string, reason: NoteReport['reason'], reasonText: string, details?: string) => {
-    const target = notes.find(n => n.id === noteId);
+    const target = communitySubmissions.find(s => s.id === noteId || s.originalNoteId === noteId);
     const reporterName = persona === 'dj' ? 'Aniko' : persona === 'admin' ? 'Staff Curator' : 'Lami Adeyemi';
 
-    // Prevent duplicate reports from same reporter
     const alreadyReported = reports.some(r => r.noteId === noteId && r.reportedBy === reporterName && r.status === 'pending_review');
     if (alreadyReported) return;
 
@@ -722,21 +902,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setReports(prev => [newReport, ...prev]);
 
-    // Update note report count; only place on protective hold if severe or >= 3 reports
-    setNotes(prev => prev.map(n => {
-      if (n.id === noteId) {
-        const count = (n.reportCount || 0) + 1;
-        const currentReporters = n.reportedBy || [];
+    // Only place on protective hold if severe spam/inappropriate or >= 3 independent reports
+    setCommunitySubmissions(prev => prev.map(s => {
+      if (s.id === noteId || s.originalNoteId === noteId) {
+        const count = (s.reportCount || 0) + 1;
+        const currentReporters = s.reportedBy || [];
         const shouldHold = count >= 3 || reason === 'spam' || reason === 'inappropriate';
         return {
-          ...n,
+          ...s,
           reportCount: count,
           reportedBy: [...currentReporters, reporterName],
           isFlagged: shouldHold,
           flagReason: reasonText
         };
       }
-      return n;
+      return s;
     }));
   };
 
@@ -750,7 +930,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           ...r,
           status: action === 'dismiss' ? 'dismissed' : 'content_removed',
           resolvedAt: new Date().toISOString(),
-          resolvedBy: persona === 'dj' ? 'Aniko (DJ)' : 'Curator Staff',
+          resolvedBy: persona === 'dj' ? 'Aniko (DJ)' : 'Staff Curator',
           resolutionNotes: notesText || (action === 'dismiss' ? 'Report reviewed and dismissed. Content remains active in archive.' : 'Content removed from public community view.')
         };
       }
@@ -758,26 +938,25 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }));
 
     if (action === 'dismiss') {
-      setNotes(prev => prev.map(n => {
-        if (n.id === report.noteId) {
+      setCommunitySubmissions(prev => prev.map(s => {
+        if (s.id === report.noteId || s.originalNoteId === report.noteId) {
           return {
-            ...n,
+            ...s,
             isFlagged: false
           };
         }
-        return n;
+        return s;
       }));
     } else {
-      setNotes(prev => prev.map(n => {
-        if (n.id === report.noteId) {
+      setCommunitySubmissions(prev => prev.map(s => {
+        if (s.id === report.noteId || s.originalNoteId === report.noteId) {
           return {
-            ...n,
+            ...s,
             isFlagged: true,
-            moderationStatus: 'rejected',
-            submissionStatus: 'declined'
+            moderationStatus: 'rejected'
           };
         }
-        return n;
+        return s;
       }));
     }
   };
@@ -791,7 +970,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       sessionCode: sessionObj?.sessionCode || null,
       timestampApprox,
       description,
-      submittedBy: persona === 'visitor' ? 'Public Visitor' : 'Lami Adeyemi',
+      submittedBy: persona === 'visitor' ? 'Public Visitor' : persona === 'follower' ? 'Community Follower' : 'Lami Adeyemi (Verified Attendee)',
       createdAt: new Date().toISOString(),
       status: 'unanswered'
     };
@@ -815,15 +994,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const respondToTrackRequest = (id: string, response: string) => {
-    setNotes(prev => prev.map(n => {
-      if (n.id === id) {
+    setCommunitySubmissions(prev => prev.map(s => {
+      if (s.id === id || s.originalNoteId === id) {
         return {
-          ...n,
-          djResponse: response,
-          updatedAt: new Date().toISOString()
+          ...s,
+          djResponse: `[SIMULATED DEMO RESPONSE] ${response}`
         };
       }
-      return n;
+      return s;
     }));
   };
 
@@ -900,7 +1078,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const resetDemoData = () => {
     localStorage.clear();
     setPersonaState('patient');
-    setNotes(SAMPLE_THERAPY_NOTES);
+    setActiveScenarioId('scen-lami');
+    setPrivateNotes(SAMPLE_PRIVATE_NOTES);
+    setCommunitySubmissions(SAMPLE_COMMUNITY_SUBMISSIONS);
     setReports(DEFAULT_NOTE_REPORTS);
     setTrackInquiries(DEFAULT_TRACK_INQUIRIES);
     setFollows(DEFAULT_FOLLOWS);
@@ -916,7 +1096,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setTourStep(0);
   };
 
-  // Tour Handlers
   const startTour = () => {
     setTourStep(0);
     setShowTour(true);
@@ -945,6 +1124,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         closeRoleTour,
         sessions: CURATED_SESSIONS,
         materials,
+        privateNotes,
+        communitySubmissions,
         notes,
         reports,
         trackInquiries,
@@ -954,6 +1135,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         contentRequests,
         notifications,
         saveNote,
+        savePrivateNote,
         deleteNote,
         submitNoteForModeration,
         submitNoteToCommunity,
@@ -961,6 +1143,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         approveNote,
         rejectNote,
         togglePinNoteByDj,
+        resonateWithSubmission,
         attachPolaroidToNote,
         removePolaroidFromNote,
         toggleFollow,
@@ -1000,7 +1183,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         startTour,
         nextTourStep,
         prevTourStep,
-        closeTour
+        closeTour,
+        attendanceScenarios: DEFAULT_ATTENDANCE_SCENARIOS,
+        activeScenarioId,
+        selectAttendanceScenario,
+        isVerifyModalOpen,
+        openVerifyModal,
+        closeVerifyModal,
+        simulateEmailVerification
       }}
     >
       {children}
@@ -1008,7 +1198,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 };
 
-export const useStore = (): StoreContextType => {
+export const useStore = () => {
   const context = useContext(StoreContext);
   if (!context) {
     throw new Error('useStore must be used within a StoreProvider');

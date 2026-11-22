@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { GTMacMenuBar } from './components/system/GTMacMenuBar';
 import { GTDesktopWorkstation } from './components/system/GTDesktopWorkstation';
-import { GTMobilePhoneOS } from './components/system/GTMobilePhoneOS';
 import { TourGuide } from './components/onboarding/TourGuide';
 import { LandingPage } from './pages/LandingPage';
 import { ArchivePage } from './pages/ArchivePage';
@@ -15,6 +14,7 @@ import { AdminPage } from './pages/AdminPage';
 import { NotesFeedPage } from './pages/NotesFeedPage';
 import { NotesBrowserWindow } from './components/social/NotesBrowserWindow';
 import { GTSystemNotificationsDrawer } from './components/system/GTSystemNotificationsDrawer';
+import { TicketVerificationModal } from './components/auth/TicketVerificationModal';
 import './styles/global.css';
 
 // Context Scanner Overlay Component for Role Switching
@@ -88,6 +88,9 @@ function MainLayout() {
 
       {/* System Notifications Drawer */}
       <GTSystemNotificationsDrawer />
+
+      {/* Ticket & Attendance Verification Modal */}
+      <TicketVerificationModal />
 
       {/* Authentic Top Menu Bar (Auto-responsive) */}
       <GTMacMenuBar />

@@ -17,7 +17,10 @@ import {
   ArrowLeft,
   Headphones,
   Check,
-  Eye
+  Eye,
+  Lock,
+  Ticket,
+  Sliders
 } from 'lucide-react';
 import { MaterialType } from '../types';
 
@@ -31,7 +34,10 @@ export const SessionRecordPage: React.FC = () => {
     submitRating,
     submitContentRequest,
     notes,
-    persona
+    persona,
+    openVerifyModal,
+    trackInquiries,
+    submitTrackIdInquiry
   } = useStore();
 
   const session = sessions.find(s => s.id === id) || sessions[0];
@@ -40,6 +46,7 @@ export const SessionRecordPage: React.FC = () => {
   const relatedLinks = CURATED_RELATED_SESSIONS.filter(r => r.sessionId === session.id);
   const existingRating = ratings[session.id];
   const userNotes = notes.filter(n => n.sessionId === session.id);
+  const sessionTrackInquiries = trackInquiries.filter(t => t.sessionId === session.id);
 
   // Modals
   const [ratingModalOpen, setRatingModalOpen] = useState(false);
@@ -51,6 +58,12 @@ export const SessionRecordPage: React.FC = () => {
   const [reqArtist, setReqArtist] = useState('');
   const [reqNote, setReqNote] = useState('');
   const [requestSuccess, setRequestSuccess] = useState(false);
+
+  // Track ID Inquiry Modal State
+  const [trackIdModalOpen, setTrackIdModalOpen] = useState(false);
+  const [trackTimestamp, setTrackTimestamp] = useState('03:45 AM');
+  const [trackDescription, setTrackDescription] = useState('');
+  const [trackIdSuccess, setTrackIdSuccess] = useState(false);
 
   const handleRatingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -223,6 +236,22 @@ export const SessionRecordPage: React.FC = () => {
         >
           {/* Follow Therapy Control */}
           <FollowButton sessionId={session.id} />
+
+          {/* Track ID Request CTA */}
+          <button
+            onClick={() => {
+              if (attendance !== 'attended' && persona !== 'dj' && persona !== 'admin') {
+                alert('Track ID Requests: Reserved for verified attendees who experienced this gathering in the room. Verify ticket email or choose an attended session.');
+                return;
+              }
+              setTrackIdModalOpen(true);
+            }}
+            className="btn btn-outline-neon"
+            style={{ gap: '6px', fontSize: '0.8rem', padding: '7px 14px' }}
+          >
+            <Sliders size={15} />
+            <span>Request Track ID from Set</span>
+          </button>
 
           {/* Therapy Note Writing CTA */}
           {persona !== 'visitor' && (
@@ -418,7 +447,39 @@ export const SessionRecordPage: React.FC = () => {
           </Link>
         </div>
 
-        {notes.filter(n => n.sessionId === session.id && n.moderationStatus === 'approved').length > 0 ? (
+        {persona === 'visitor' || persona === 'follower' ? (
+          <div
+            style={{
+              padding: 'var(--space-2xl)',
+              textAlign: 'center',
+              backgroundColor: 'rgba(4, 229, 57, 0.03)',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid rgba(4, 229, 57, 0.25)',
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)'
+            }}
+          >
+            <Lock size={32} color="var(--gt-acid)" style={{ marginBottom: 'var(--space-xs)' }} />
+            <div className="case-ref-stamp" style={{ marginBottom: '8px' }}>
+              MEMBERS-ONLY ARCHIVE // VERIFIED ATTENDANCE REQUIRED
+            </div>
+            <h4 style={{ fontSize: '1.25rem', fontFamily: 'var(--font-display)', marginBottom: '8px', color: 'var(--gt-cream)' }}>
+              Community Reflections Locked
+            </h4>
+            <p style={{ color: 'var(--gt-muted)', fontSize: '0.85rem', maxWidth: '540px', margin: '0 auto 16px auto', lineHeight: 1.5 }}>
+              Personal dancefloor reflections and polaroids are reserved for verified attendees of Group Therapy sessions. Unverified visitors and followers can explore all official recordings, tracklists, and lineups.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+              <button
+                onClick={openVerifyModal}
+                className="btn btn-primary"
+                style={{ fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Ticket size={14} />
+                <span>Verify Ticket Email &amp; Unlock Reflections</span>
+              </button>
+            </div>
+          </div>
+        ) : notes.filter(n => n.sessionId === session.id && n.moderationStatus === 'approved').length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)' }}>
             {notes
               .filter(n => n.sessionId === session.id && n.moderationStatus === 'approved')
@@ -519,6 +580,46 @@ export const SessionRecordPage: React.FC = () => {
             <p style={{ color: 'var(--gt-acid)', fontSize: '0.78rem', fontFamily: 'var(--font-metadata)' }}>
               Attendees can draft therapy notes with photos and submit them for community curation.
             </p>
+          </div>
+        )}
+
+        {/* Track ID Inquiries Section */}
+        {sessionTrackInquiries.length > 0 && (
+          <div style={{ marginTop: 'var(--space-2xl)' }}>
+            <div style={{ fontFamily: 'var(--font-metadata)', fontSize: '0.72rem', color: 'var(--gt-acid)', letterSpacing: '0.08em', marginBottom: '6px' }}>
+              SET IDENTIFICATION BOARD
+            </div>
+            <h4 style={{ fontSize: '1.2rem', fontFamily: 'var(--font-display)', marginBottom: '12px' }}>
+              Track ID Inquiries for {session.title}
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {sessionTrackInquiries.map(inq => (
+                <div key={inq.id} className="archival-panel-raised" style={{ padding: '12px 16px', borderLeft: inq.status === 'answered' ? '3px solid var(--gt-acid)' : '3px solid #ffb830' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span className="case-ref-stamp">TIME: {inq.timestampApprox}</span>
+                      <span style={{ fontSize: '0.68rem', fontFamily: 'var(--font-metadata)', color: inq.status === 'answered' ? 'var(--gt-acid)' : '#ffb830' }}>
+                        {inq.status === 'answered' ? '● IDENTIFIED' : '● AWAITING CONTEXT'}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--gt-muted)', fontFamily: 'var(--font-metadata)' }}>
+                      BY {inq.submittedBy}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--gt-cream)', margin: '4px 0 8px 0' }}>
+                    "{inq.description}"
+                  </p>
+                  {inq.djResponse && (
+                    <div style={{ padding: '8px 12px', backgroundColor: 'rgba(4, 229, 57, 0.08)', borderRadius: '4px', border: '1px solid rgba(4, 229, 57, 0.2)' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--gt-acid)', fontFamily: 'var(--font-metadata)', fontWeight: 700, marginBottom: '2px' }}>
+                        {inq.respondedBy || 'Resident DJ'} [SIMULATED DEMO RESPONSE]
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--gt-cream)' }}>{inq.djResponse}</div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -745,6 +846,127 @@ export const SessionRecordPage: React.FC = () => {
                   </button>
                   <button type="submit" className="btn btn-primary">
                     Submit Request
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Track ID Inquiry Modal for Attended Patients */}
+      {trackIdModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 'var(--space-md)'
+          }}
+          onClick={() => setTrackIdModalOpen(false)}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--brand-surface-raised)',
+              border: '1px solid var(--border-accent)',
+              borderRadius: 'var(--radius-sm)',
+              maxWidth: '480px',
+              width: '100%',
+              padding: 'var(--space-xl)'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {trackIdSuccess ? (
+              <div style={{ textAlign: 'center', padding: 'var(--space-lg) 0' }}>
+                <Check size={36} color="var(--gt-acid)" style={{ marginBottom: 'var(--space-sm)' }} />
+                <h3 style={{ fontSize: '1.25rem', fontFamily: 'var(--font-display)', marginBottom: 'var(--space-xs)' }}>
+                  Track ID Inquiry Filed
+                </h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  Your track request has been linked to {session.title} and delivered to the resident DJ desk. Responses will appear on this session case file.
+                </p>
+              </div>
+            ) : (
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  if (!trackDescription.trim()) return;
+                  submitTrackIdInquiry(session.id, trackTimestamp, trackDescription);
+                  setTrackIdSuccess(true);
+                  setTimeout(() => {
+                    setTrackIdSuccess(false);
+                    setTrackIdModalOpen(false);
+                    setTrackDescription('');
+                  }, 1800);
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--space-xs)' }}>
+                  <Sliders size={18} color="var(--gt-acid)" />
+                  <h3 style={{ fontSize: '1.25rem', fontFamily: 'var(--font-display)', margin: 0 }}>
+                    Request Track ID from Performance
+                  </h3>
+                </div>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.825rem', marginBottom: 'var(--space-md)' }}>
+                  As an attendee of {session.title}, describe the track or transition you want identified. DJs answer asynchronously.
+                </p>
+
+                <div style={{ marginBottom: 'var(--space-md)' }}>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontFamily: 'var(--font-metadata)', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                    APPROXIMATE TIMESTAMP / TIME OF NIGHT
+                  </label>
+                  <input
+                    type="text"
+                    value={trackTimestamp}
+                    onChange={e => setTrackTimestamp(e.target.value)}
+                    placeholder="e.g. 03:45 AM or 'midway through set'"
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      backgroundColor: 'var(--brand-surface)',
+                      border: '1px solid var(--border-default)',
+                      borderRadius: 'var(--radius-xs)',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.85rem'
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: 'var(--space-lg)' }}>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontFamily: 'var(--font-metadata)', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                    SONIC DESCRIPTION &amp; VOCALS / ELEMENTS
+                  </label>
+                  <textarea
+                    value={trackDescription}
+                    onChange={e => setTrackDescription(e.target.value)}
+                    required
+                    placeholder="Describe the rhythm (e.g. heavy rolling bassline with syncopated Yoruba vocal sample, tempo ~124bpm)..."
+                    style={{
+                      width: '100%',
+                      height: '80px',
+                      padding: '10px',
+                      backgroundColor: 'var(--brand-surface)',
+                      border: '1px solid var(--border-default)',
+                      borderRadius: 'var(--radius-xs)',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.85rem'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-sm)' }}>
+                  <button type="button" className="btn btn-ghost" onClick={() => setTrackIdModalOpen(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    Submit Track ID Inquiry
                   </button>
                 </div>
               </form>

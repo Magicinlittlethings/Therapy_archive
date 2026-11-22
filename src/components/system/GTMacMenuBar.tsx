@@ -94,10 +94,11 @@ export const GTMacMenuBar: React.FC = () => {
     : 'Finder';
 
   const roleLabels: Record<DemoPersona, string> = {
-    patient: 'Patient',
+    patient: 'Verified Patient (Demo)',
+    follower: 'Community Follower (Unverified)',
     visitor: 'Public Visitor',
-    dj: 'Resident DJ (Aniko)',
-    admin: 'GT Curator (Staff)'
+    dj: 'Resident DJ (Aniko - Simulated)',
+    admin: 'GT Curator (Staff Terminal)'
   };
 
   const isAppOpen = location.pathname !== '/' || isBrowserOpen;
@@ -272,6 +273,16 @@ export const GTMacMenuBar: React.FC = () => {
               <div className="mac-dropdown-item bold" onClick={() => { setActiveMenu(null); alert('GROUP THERAPY // ARCHIVE 1.0\nElectronic music archival kernel\nAttendance-linked session case files and progressive releases.'); }}>
                 About GT-OS Workstation
               </div>
+              <a
+                href="https://grouptherapy.live"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mac-dropdown-item"
+                style={{ textDecoration: 'none', color: 'var(--gt-acid)' }}
+                onClick={() => setActiveMenu(null)}
+              >
+                ✦ Exit to grouptherapy.live (Main Website)
+              </a>
               <div className="mac-dropdown-divider" />
               <div className="mac-dropdown-item" onClick={() => { setActiveMenu(null); openBrowser('gt://notes.html'); }}>
                 Launch notes.html (Browser)
@@ -479,15 +490,14 @@ export const GTMacMenuBar: React.FC = () => {
             fontSize: '0.68rem',
             fontFamily: 'var(--font-metadata)'
           }}
-          title={isSoundboardPlaying ? 'Pause GT Master Audio Stream' : 'Play Soundboard Master Stream'}
+          title={isSoundboardPlaying ? 'Mute Ambient Soundboard Demo' : 'Play Ambient Soundboard Demo (Web Audio API)'}
         >
           {isSoundboardPlaying ? <Volume2 size={12} color="var(--gt-acid)" /> : <VolumeX size={12} />}
           <span className="desktop-only" style={{ fontSize: '0.65rem' }}>
-            {isSoundboardPlaying ? 'LIVE' : 'MUTE'}
+            {isSoundboardPlaying ? 'SYNTH ON' : 'SYNTH MUTE'}
           </span>
         </button>
 
-        {/* User Account / Role Switcher Menu */}
         {/* User Account / Role Switcher Menu */}
         <div className="mac-menu-item" style={{ position: 'relative' }}>
           <button
@@ -506,7 +516,7 @@ export const GTMacMenuBar: React.FC = () => {
               gap: '6px',
               transition: 'all 0.18s ease'
             }}
-            title="Click to switch persona: Patient, Public Visitor, DJ, Staff (reloads to landing page)"
+            title="DEMO ROLE SWITCHER: Preview different access boundaries (reloads to landing page)"
           >
             <span
               style={{
@@ -519,7 +529,7 @@ export const GTMacMenuBar: React.FC = () => {
               }}
             />
             <span style={{ fontSize: '0.62rem', fontFamily: 'var(--font-metadata)', color: 'var(--gt-acid)', fontWeight: 800, letterSpacing: '0.04em' }}>
-              ROLE:
+              DEMO ROLE:
             </span>
             <span className="mac-role-name" style={{ fontWeight: 700, color: '#f8f8f4' }}>
               {roleLabels[persona]}
@@ -528,15 +538,15 @@ export const GTMacMenuBar: React.FC = () => {
           </button>
 
           {activeMenu === 'role' && (
-            <div className="mac-dropdown-menu" style={{ right: 0, left: 'auto', width: '260px', padding: '6px 0' }}>
+            <div className="mac-dropdown-menu" style={{ right: 0, left: 'auto', width: '280px', padding: '6px 0' }}>
               <div style={{ padding: '6px 12px 2px', fontSize: '0.68rem', fontFamily: 'var(--font-metadata)', color: 'var(--gt-acid)', fontWeight: 800, letterSpacing: '0.05em' }}>
-                SWITCH USER ROLE
+                DEMO ROLE SWITCHER // SIMULATION ONLY
               </div>
               <div style={{ padding: '0 12px 6px', fontSize: '0.65rem', color: 'var(--gt-muted)', lineHeight: 1.3 }}>
-                Reloads web and returns to landing wallpaper
+                Demonstration tool to test access boundaries. Not real authentication.
               </div>
               <div className="mac-dropdown-divider" style={{ margin: '4px 0' }} />
-              {(['patient', 'visitor', 'dj', 'admin'] as DemoPersona[]).map(r => (
+              {(['patient', 'follower', 'visitor', 'dj', 'admin'] as DemoPersona[]).map(r => (
                 <div
                   key={r}
                   className="mac-dropdown-item"
@@ -558,10 +568,11 @@ export const GTMacMenuBar: React.FC = () => {
                       {roleLabels[r]}
                     </div>
                     <div style={{ fontSize: '0.65rem', color: 'var(--gt-muted)', marginTop: '2px' }}>
-                      {r === 'patient' && 'Verified door passes & private/public notes'}
-                      {r === 'visitor' && 'Public case files & collective audio records'}
-                      {r === 'dj' && 'Aniko resident deck, track IDs & set reviews'}
-                      {r === 'admin' && 'Staff door scanner ingest & moderation desk'}
+                      {r === 'patient' && 'Physical attendance verified at GT-XII and GT-XV. Full patient privileges.'}
+                      {r === 'follower' && 'Registered account without physical attendance. Public archive & follows.'}
+                      {r === 'visitor' && 'Unregistered guest. Public session directory and published materials.'}
+                      {r === 'dj' && 'Aniko resident DJ station. Track ID demands & set reviews (Simulated).'}
+                      {r === 'admin' && 'Curator terminal. Submission moderation and attendance reconciliation.'}
                     </div>
                   </div>
                   {persona === r && <Check size={14} color="var(--gt-acid)" style={{ flexShrink: 0, marginLeft: '8px' }} />}

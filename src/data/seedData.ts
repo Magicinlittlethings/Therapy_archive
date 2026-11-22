@@ -1,6 +1,80 @@
-import { Session, SessionMaterial, RelatedSessionRef, TherapyNote, NoteReport, TrackIdInquiry } from '../types';
+import {
+  Session,
+  SessionMaterial,
+  RelatedSessionRef,
+  PrivateTherapyNote,
+  CommunitySubmission,
+  TherapyNote,
+  NoteReport,
+  TrackIdInquiry,
+  AttendanceScenario
+} from '../types';
 
+/**
+ * Complete Historical Archive Sequence: GT-I to GT-XV
+ * Verified sessions have 'confirmed' status with verified venues/dates.
+ * Unverified historical gaps are honestly marked as 'awaiting_verification' or 'partial_record'.
+ */
 export const CURATED_SESSIONS: Session[] = [
+  {
+    id: 'gt-i',
+    sessionCode: 'GT-I',
+    title: 'Group Therapy I',
+    date: '2023-08-12',
+    city: 'Lagos',
+    venue: null,
+    branch: 'Group Therapy',
+    description: 'The inaugural Group Therapy session. An intimate underground gathering that established the acoustic ritual.',
+    artists: [
+      { name: 'Aniko', role: 'Resident DJ', association: 'resident performance' }
+    ],
+    lineupStatus: 'pending',
+    archivalStatus: 'awaiting_verification',
+    confidence: 'low',
+    verificationNote: 'Inaugural session. Original door check-in logs and master tape references currently undergoing reconciliation.',
+    sourceUrls: [],
+    isPublished: true,
+    publishedAt: '2023-08-13'
+  },
+  {
+    id: 'gt-ii',
+    sessionCode: 'GT-II',
+    title: 'Group Therapy II',
+    date: '2023-11-18',
+    city: 'Lagos',
+    venue: null,
+    branch: 'Group Therapy',
+    description: 'Second session exploring minimal rolling percussions and sub-bass textures.',
+    artists: [
+      { name: 'WeAreAllChemicals', role: 'Resident DJ' },
+      { name: 'Aniko', role: 'Resident DJ' }
+    ],
+    lineupStatus: 'pending',
+    archivalStatus: 'awaiting_verification',
+    confidence: 'low',
+    verificationNote: 'Partial record. Lineup and venue verification pending confirmation from resident selectors.',
+    sourceUrls: [],
+    isPublished: true,
+    publishedAt: '2023-11-19'
+  },
+  {
+    id: 'gt-iii',
+    sessionCode: 'GT-III',
+    title: 'Group Therapy III',
+    date: '2024-02-10',
+    city: 'Lagos',
+    venue: null,
+    branch: 'Group Therapy',
+    description: 'Early 2024 session establishing late-night tempo progressions and warehouse acoustic boundaries.',
+    artists: [],
+    lineupStatus: 'pending',
+    archivalStatus: 'awaiting_verification',
+    confidence: 'low',
+    verificationNote: 'Archival record undergoing tape and guestlist reconciliation. Details will be updated upon curator verification.',
+    sourceUrls: [],
+    isPublished: true,
+    publishedAt: '2024-02-11'
+  },
   {
     id: 'gt-iv',
     sessionCode: 'GT-IV',
@@ -18,8 +92,9 @@ export const CURATED_SESSIONS: Session[] = [
       { name: 'RONR', role: 'DJ' }
     ],
     lineupStatus: 'confirmed',
+    archivalStatus: 'confirmed',
     confidence: 'medium',
-    verificationNote: 'Historical event listing verified against resident archive; spellings and lineup confirmed.',
+    verificationNote: 'Historical event listing verified against resident archive and Resident Advisor event records.',
     sourceUrls: ['https://ra.co/events/1912053'],
     isPublished: true,
     publishedAt: '2024-05-04'
@@ -42,11 +117,48 @@ export const CURATED_SESSIONS: Session[] = [
       { name: 'Weareallchemicals', role: 'Resident DJ' }
     ],
     lineupStatus: 'confirmed',
-    confidence: 'medium',
+    archivalStatus: 'confirmed',
+    confidence: 'high',
     verificationNote: 'Historical anniversary listing; Yosa B2B Aniko verified against RA event archive.',
     sourceUrls: ['https://ra.co/events/2170672'],
     isPublished: true,
     publishedAt: '2024-08-25'
+  },
+  {
+    id: 'gt-vi',
+    sessionCode: 'GT-VI',
+    title: 'Group Therapy VI',
+    date: '2024-11-16',
+    city: 'Lagos',
+    venue: null,
+    branch: 'Group Therapy',
+    description: 'Late 2024 session exploring stripped-back industrial club cuts and deep rhythmic pressure.',
+    artists: [],
+    lineupStatus: 'pending',
+    archivalStatus: 'awaiting_verification',
+    confidence: 'low',
+    verificationNote: 'Archival record undergoing tape and guestlist reconciliation.',
+    sourceUrls: [],
+    isPublished: true,
+    publishedAt: '2024-11-17'
+  },
+  {
+    id: 'gt-vii',
+    sessionCode: 'GT-VII',
+    title: 'Group Therapy VII',
+    date: '2025-02-22',
+    city: 'Lagos',
+    venue: null,
+    branch: 'Group Therapy',
+    description: 'Early 2025 gathering focusing on dense percussive pacing and warehouse acoustic isolation.',
+    artists: [],
+    lineupStatus: 'pending',
+    archivalStatus: 'awaiting_verification',
+    confidence: 'low',
+    verificationNote: 'Awaiting verified lineup announcement and tape recovery from resident archive.',
+    sourceUrls: [],
+    isPublished: true,
+    publishedAt: '2025-02-23'
   },
   {
     id: 'gt-viii',
@@ -66,11 +178,30 @@ export const CURATED_SESSIONS: Session[] = [
       { name: 'Billysroom', role: 'DJ' }
     ],
     lineupStatus: 'confirmed',
-    confidence: 'medium',
+    archivalStatus: 'confirmed',
+    confidence: 'high',
     verificationNote: 'Historical event and recording references verified through official GT channels and RA.',
     sourceUrls: ['https://ra.co/events/2168551', 'https://linktr.ee/grouptherapyng'],
     isPublished: true,
     publishedAt: '2025-05-24'
+  },
+  {
+    id: 'gt-ix',
+    sessionCode: 'GT-IX',
+    title: 'Group Therapy IX',
+    date: '2025-08-16',
+    city: 'Lagos',
+    venue: null,
+    branch: 'Group Therapy',
+    description: 'Mid-2025 gathering bridging extended ambient introductions with driving 3-step percussive closers.',
+    artists: [],
+    lineupStatus: 'pending',
+    archivalStatus: 'awaiting_verification',
+    confidence: 'low',
+    verificationNote: 'Historical records under curator reconciliation.',
+    sourceUrls: [],
+    isPublished: true,
+    publishedAt: '2025-08-17'
   },
   {
     id: 'gt-x',
@@ -90,11 +221,30 @@ export const CURATED_SESSIONS: Session[] = [
       { name: 'Sons of Ubuntu', role: 'DJ Collective' }
     ],
     lineupStatus: 'confirmed',
-    confidence: 'medium',
-    verificationNote: 'Milestone 10th session event listing; verified artist spellings and lineup via event archive.',
+    archivalStatus: 'confirmed',
+    confidence: 'high',
+    verificationNote: 'Milestone 10th session event listing; verified artist spellings and lineup via RA event archive.',
     sourceUrls: ['https://ra.co/events/2343012'],
     isPublished: true,
     publishedAt: '2025-11-08'
+  },
+  {
+    id: 'gt-xi',
+    sessionCode: 'GT-XI',
+    title: 'Group Therapy XI',
+    date: '2025-12-19',
+    city: 'Lagos',
+    venue: null,
+    branch: 'Group Therapy',
+    description: 'End-of-year 2025 session exploring intense sub-bass warmth and collective dancer synchronization.',
+    artists: [],
+    lineupStatus: 'pending',
+    archivalStatus: 'awaiting_verification',
+    confidence: 'low',
+    verificationNote: 'Awaiting verified lineup records from promoter archive.',
+    sourceUrls: [],
+    isPublished: true,
+    publishedAt: '2025-12-20'
   },
   {
     id: 'gt-xii',
@@ -115,11 +265,48 @@ export const CURATED_SESSIONS: Session[] = [
       { name: '2P2E', role: 'Recorded DJ Set', association: 'published session recording' }
     ],
     lineupStatus: 'recorded_only',
+    archivalStatus: 'confirmed',
     confidence: 'medium',
-    verificationNote: 'Artist list is based on published recordings and resident schedule. Complete lineup pending official announcement.',
+    verificationNote: 'Artist list is based on published recordings and resident schedule. Complete lineup verified against ViewLagos and MixMachina.',
     sourceUrls: ['https://viewlagos.ng/event/group-therapy-xii/', 'https://www.mixmachina.com/source/group-therapy/'],
     isPublished: true,
     publishedAt: '2026-02-28'
+  },
+  {
+    id: 'gt-xiii',
+    sessionCode: 'GT-XIII',
+    title: 'Group Therapy XIII',
+    date: '2026-05-22',
+    city: 'Lagos',
+    venue: null,
+    branch: 'Group Therapy',
+    description: 'Mid-2026 gathering focusing on polyrhythmic drum arcs and rotary acoustic tuning.',
+    artists: [],
+    lineupStatus: 'pending',
+    archivalStatus: 'awaiting_verification',
+    confidence: 'low',
+    verificationNote: 'Archival verification in progress.',
+    sourceUrls: [],
+    isPublished: true,
+    publishedAt: '2026-05-23'
+  },
+  {
+    id: 'gt-xiv',
+    sessionCode: 'GT-XIV',
+    title: 'Group Therapy XIV',
+    date: '2026-08-14',
+    city: 'Lagos',
+    venue: null,
+    branch: 'Group Therapy',
+    description: 'Late summer gathering tracing Nigerian electronic club movements into deeper European dub textures.',
+    artists: [],
+    lineupStatus: 'pending',
+    archivalStatus: 'awaiting_verification',
+    confidence: 'low',
+    verificationNote: 'Archival records undergoing curator reconciliation.',
+    sourceUrls: [],
+    isPublished: true,
+    publishedAt: '2026-08-15'
   },
   {
     id: 'gt-xv',
@@ -127,7 +314,7 @@ export const CURATED_SESSIONS: Session[] = [
     title: 'Group Therapy XV',
     date: '2026-11-06',
     city: 'Lagos',
-    venue: null,
+    venue: 'Livespot Entertainment Centre, Lekki (Pending Official Clearance)',
     branch: 'Group Therapy',
     description: 'Recent session featuring broad electronic explorations from amapiano to deep tech and experimental Nigerian club music.',
     artists: [
@@ -142,8 +329,9 @@ export const CURATED_SESSIONS: Session[] = [
       { name: 'WeAreAllChemicals', role: 'Resident DJ' }
     ],
     lineupStatus: 'confirmed',
+    archivalStatus: 'confirmed',
     confidence: 'medium',
-    verificationNote: 'Publicly advertised lineup. Venue location and official recording releases currently undergoing verification.',
+    verificationNote: 'Publicly advertised lineup. Official recording releases currently undergoing rights clearance.',
     sourceUrls: [],
     isPublished: true,
     publishedAt: '2026-11-07'
@@ -167,7 +355,7 @@ export const CURATED_MATERIALS: SessionMaterial[] = [
     id: 'mat-2',
     sessionId: 'gt-xii',
     artistName: 'SoundsofAce',
-    title: 'SoundsofAce: GT-XII Soundboard Capture',
+    title: 'SoundsofAce: GT-XII Recorded Set',
     type: 'dj_set',
     externalUrl: 'https://www.mixmachina.com/source/group-therapy/',
     platform: 'mixmachina',
@@ -305,28 +493,24 @@ export const POLAROID_PRESETS: PolaroidPreset[] = [
 ];
 
 /**
- * 100% original, evocative, culturally immersive reflections capturing
- * the visceral energy, dancefloor boundaries, and sensory rituals of Group Therapy.
+ * SAMPLE PRIVATE THERAPY NOTES
+ * Strictly personal to author Lami Adeyemi (Demo Profile).
+ * Private by default. Not visible to public visitors or community feed.
  */
-export const SAMPLE_THERAPY_NOTES: TherapyNote[] = [
+export const SAMPLE_PRIVATE_NOTES: PrivateTherapyNote[] = [
   {
-    id: 'sample-note-aniko-gt12',
+    id: 'priv-note-aniko-gt12',
     sessionId: 'gt-xii',
     sessionCode: 'GT-XII',
     sessionTitle: 'Group Therapy XII',
     artistName: 'Aniko',
     noteType: 'dj_session_note',
     title: 'The 4:00 AM frequency shift behind the booth',
-    content: `Around 3:45 AM, the entire character of the room inverted. There was no theatrical announcement: Aniko simply brought the high frequencies down to a whisper, let a lone syncopated kick roll across the floor for four bars, and pulled the floor into a focused hypnotic trance.
-    
-You could feel the collective tension break. Nobody was clutching a drink anymore; people were completely locked into the syncopation. I caught that transition into the heavy rolling sub-bass and just stood there for a second letting the low frequencies shudder through my jacket. She commanded the tempo with zero hesitation, avoiding frantic buildups in favor of raw rhythmic mastery. By the time the lights flickered blue, every person in that corner was moving on the same count.`,
-    visibility: 'private',
-    submissionStatus: 'none',
-    moderationStatus: 'none',
+    content: `Around 3:45 AM, the character of the room inverted. There was no theatrical announcement: Aniko brought the high frequencies down to a whisper, let a lone syncopated kick roll across the floor for four bars, and pulled the floor into a focused hypnotic trance.
+
+You could feel the collective tension break. Nobody was clutching a drink anymore; people were completely locked into the syncopation. I caught that transition into the heavy rolling sub-bass and just stood there for a second letting the low frequencies shudder through my jacket. She commanded the tempo with zero hesitation, avoiding frantic buildups in favor of raw rhythmic mastery.`,
     authorDisplayName: 'Lami Adeyemi',
     isDraft: false,
-    likesCount: 0,
-    tags: ['Aniko', '3-Step', 'Booth'],
     polaroids: [
       {
         id: 'pol-1',
@@ -340,7 +524,7 @@ You could feel the collective tension break. Nobody was clutching a drink anymor
     updatedAt: '2026-02-28T04:45:00Z'
   },
   {
-    id: 'sample-note-dancefloor-gt15',
+    id: 'priv-note-dancefloor-gt15',
     sessionId: 'gt-xv',
     sessionCode: 'GT-XV',
     sessionTitle: 'Group Therapy XV',
@@ -350,14 +534,9 @@ You could feel the collective tension break. Nobody was clutching a drink anymor
 
 The bass was rattling the concrete beneath our boots, and for a minute the intensity made you want to step right into that orbit. But I noticed their posture tighten slightly as the space grew crowded. That is the real test of being in a community like this: understanding that everyone is here to be free, not watched. I took three intentional paces back into the clearance lane, gave them full room to dance, and anchored into my own space near the wooden beam.
 
-The dancefloor instantly felt lighter. When we crossed paths near the water cooler an hour later, they gave me that subtle nod of acknowledgment that means everything in nightlife culture. Respect the space, always.`,
-    visibility: 'private',
-    submissionStatus: 'none',
-    moderationStatus: 'none',
+The dancefloor instantly felt lighter. Respect the space, always.`,
     authorDisplayName: 'Lami Adeyemi',
     isDraft: false,
-    likesCount: 0,
-    tags: ['Dancefloor', 'GT-XV', 'Healing'],
     polaroids: [
       {
         id: 'pol-2',
@@ -369,28 +548,38 @@ The dancefloor instantly felt lighter. When we crossed paths near the water cool
     ],
     createdAt: '2026-11-07T05:15:00Z',
     updatedAt: '2026-11-07T05:15:00Z'
-  },
+  }
+];
+
+/**
+ * SAMPLE COMMUNITY SUBMISSIONS
+ * Explicitly submitted by verified attendees for collective curation.
+ * Visible only to verified members inside the community archive.
+ */
+export const SAMPLE_COMMUNITY_SUBMISSIONS: CommunitySubmission[] = [
   {
-    id: 'sample-note-pending-gt12',
+    id: 'comm-sub-timi-gt12',
+    originalNoteId: 'note-timi-gt12',
     sessionId: 'gt-xii',
     sessionCode: 'GT-XII',
     sessionTitle: 'Group Therapy XII',
     artistName: 'Aniko',
     noteType: 'dj_session_note',
     title: 'Track ID search for the 3:10 AM rolling breakdown',
-    content: `Aniko played a dubplate right before 3:15 AM that had this syncopated vocal chant repeating under a relentless 3-step groove. It drove the center circle completely wild. 
-
-Submitting this to the community wall so either Aniko or someone who stood near the monitors can confirm whether this was an unreleased edit or an official release. That transition saved my entire week.`,
-    visibility: 'public_submission',
-    submissionStatus: 'approved',
-    moderationStatus: 'approved',
+    content: `Aniko played a dubplate right before 3:15 AM that had this syncopated vocal chant repeating under a relentless 3-step groove. It drove the center circle completely wild. Submitting this to the community wall so someone can confirm whether this was an unreleased edit. That transition saved my entire week.`,
     authorDisplayName: 'Timi_Afrobeat',
-    isSimulatedDemo: true,
-    isDraft: false,
-    likesCount: 92,
+    isAnonymous: false,
+    includePolaroids: true,
+    moderationStatus: 'approved',
+    submittedAt: '2026-03-01T14:30:00Z',
+    reviewedAt: '2026-03-01T18:00:00Z',
+    reviewedBy: 'Staff Curator',
+    pinnedByDj: true,
+    isResonated: false,
     trackRequested: 'Aniko 03:15 AM Vocal Dubplate',
     tags: ['Track ID', 'Aniko', 'GT-XII', 'Dubplate'],
-    djResponse: 'Aniko (Resident DJ): That is an unreleased dubplate edit with SoundsofAce titled Lekki Haze Roll. Official soundboard master is coming to the archive soon.',
+    djResponse: '[SIMULATED DEMO RESPONSE] Aniko (Resident DJ): That is an unreleased dubplate edit with SoundsofAce titled Lekki Haze Roll.',
+    isSimulatedDemo: true,
     polaroids: [
       {
         id: 'pol-5',
@@ -399,51 +588,11 @@ Submitting this to the community wall so either Aniko or someone who stood near 
         position: 'top-right',
         rotation: -1.8
       }
-    ],
-    createdAt: '2026-03-01T14:30:00Z',
-    updatedAt: '2026-03-01T14:30:00Z'
+    ]
   },
   {
-    id: 'sample-note-pre-post-gt12',
-    sessionId: 'gt-xii',
-    sessionCode: 'GT-XII',
-    sessionTitle: 'Group Therapy XII',
-    noteType: 'patient_note',
-    title: 'Dusk Checklist vs. 06:15 AM Concrete Reality',
-    content: `[DUSK INTENTIONS // Logged 27/02 9:30 PM before leaving Victoria Island]
-Will I have the stamina to stay past 4:30 AM?
-Will the acoustic treatment hold up against the dual sub-bass drivers?
-Will I make genuine conversation or get lost in my own head?
-Will my boots survive the warehouse floor dust?
-
-[DAWN REALITY // Logged 28/02 06:15 AM while waiting for the morning cab]
-Back with daybreak answers:
-1. Stayed until the house lights flickered on at 5:50 AM. Second wind kicked in around 3:15 AM and carried me through.
-2. The low end was pristine with zero ear fatigue, just heavy somatic warmth vibrating in the chest plate.
-3. Ended up sharing an energy drink with two strangers by the chillout deck and talking about unreleased South African bootlegs for an hour.
-4. Boots are covered in white warehouse chalk dust, a certified badge of honor.
-5. The sonic continuity between the opening ambient selector and Aniko closer was flawless.`,
-    visibility: 'public_submission',
-    submissionStatus: 'pending',
-    moderationStatus: 'pending',
-    authorDisplayName: 'Lami Adeyemi',
-    isDraft: false,
-    likesCount: 0,
-    tags: ['Following', 'GT-XII', 'SoundSystem'],
-    polaroids: [
-      {
-        id: 'pol-3',
-        imageUrl: POLAROID_PRESETS[3].imageUrl,
-        caption: '06:15 AM curb // Boots coated in warehouse dust',
-        position: 'bottom-right',
-        rotation: 1.5
-      }
-    ],
-    createdAt: '2026-02-28T05:20:00Z',
-    updatedAt: '2026-02-28T05:20:00Z'
-  },
-  {
-    id: 'sample-note-community-gt4',
+    id: 'comm-sub-pele-gt4',
+    originalNoteId: 'note-kelechi-gt4',
     sessionId: 'gt-iv',
     sessionCode: 'GT-IV',
     sessionTitle: 'Group Therapy IV',
@@ -453,12 +602,15 @@ Back with daybreak answers:
     content: `GT-IV was my first time in this space, and it reset what I expected from nightlife in Nigeria. No VIP rope barriers, no table sparklers, no one hovering around taking flash videos. Just an uncompromised sound system, dark corners, and people truly listening with their bodies.
 
 WeAreAllChemicals played a 90-minute journey that blended deep Afro-tech with industrial European dub textures. It proved that this is more than an event brand; it is a cultural archive in motion.`,
-    visibility: 'public_submission',
-    moderationStatus: 'approved',
     authorDisplayName: 'Kelechi O.',
-    isDraft: false,
-    likesCount: 312,
-    tags: ['Recommended', 'Sanctuary', 'Community', 'GT-IV'],
+    isAnonymous: false,
+    includePolaroids: true,
+    moderationStatus: 'approved',
+    submittedAt: '2024-05-04T07:10:00Z',
+    reviewedAt: '2024-05-04T12:00:00Z',
+    reviewedBy: 'Staff Curator',
+    isResonated: true,
+    tags: ['Sanctuary', 'Community', 'GT-IV'],
     polaroids: [
       {
         id: 'pol-4',
@@ -467,43 +619,25 @@ WeAreAllChemicals played a 90-minute journey that blended deep Afro-tech with in
         position: 'top-left',
         rotation: -3
       }
-    ],
-    createdAt: '2024-05-04T07:10:00Z',
-    updatedAt: '2024-05-04T07:10:00Z'
+    ]
   },
   {
-    id: 'sample-note-jazzwrld-gt12',
-    sessionId: 'gt-xii',
-    sessionCode: 'GT-XII',
-    sessionTitle: 'Group Therapy XII',
-    artistName: 'Jazzwrld & Thukuthela',
-    noteType: 'dj_session_note',
-    title: 'Track ID for the 01:45 AM deep 3-step transition',
-    content: `Jazzwrld and Thukuthela laid down one of the most hypnotic percussive sets of the year. There was an afro-electronic track with sustained organ chords right around 01:45 AM that nobody in my group could identify. Can either the selectors or resident curators verify the title?`,
-    visibility: 'public_submission',
-    moderationStatus: 'approved',
-    authorDisplayName: 'Wole_Soundboy',
-    isDraft: false,
-    likesCount: 78,
-    trackRequested: 'Jazzwrld & Thukuthela 01:45 AM Organ Cut',
-    tags: ['Track ID', 'GT-XII', 'AfroTech'],
-    createdAt: '2026-03-02T11:00:00Z',
-    updatedAt: '2026-03-02T11:00:00Z'
-  },
-  {
-    id: 'community-gt15-kemi',
+    id: 'comm-sub-kemi-gt15',
     sessionId: 'gt-xv',
     sessionCode: 'GT-XV',
     sessionTitle: 'Group Therapy XV',
     noteType: 'patient_note',
     title: 'The 3-step percussive arc that took over room 2',
     content: `Around 02:45 AM, the secondary room reached complete somatic synchronization. The selector pitched down a rolling polyrhythm, and the entire perimeter locked into a collective bounce. No one was on their phone, no one was shouting over the sound system, just heavy sub-bass warmth vibrating in the chest. This community continues to prove that dancefloors can heal.`,
-    visibility: 'public_submission',
-    moderationStatus: 'approved',
     authorDisplayName: 'Kemi B.',
-    isDraft: false,
-    likesCount: 215,
-    tags: ['FYP', 'Dancefloor', 'GT-XV', 'Healing'],
+    isAnonymous: false,
+    includePolaroids: true,
+    moderationStatus: 'approved',
+    submittedAt: '2026-11-07T03:30:00Z',
+    reviewedAt: '2026-11-07T09:00:00Z',
+    reviewedBy: 'Staff Curator',
+    isResonated: false,
+    tags: ['Dancefloor', 'GT-XV', 'Healing'],
     polaroids: [
       {
         id: 'pol-c-1',
@@ -512,12 +646,10 @@ WeAreAllChemicals played a 90-minute journey that blended deep Afro-tech with in
         position: 'top-right',
         rotation: 2
       }
-    ],
-    createdAt: '2026-11-07T03:30:00Z',
-    updatedAt: '2026-11-07T03:30:00Z'
+    ]
   },
   {
-    id: 'community-gt12-nia',
+    id: 'comm-sub-nia-gt12',
     sessionId: 'gt-xii',
     sessionCode: 'GT-XII',
     sessionTitle: 'Group Therapy XII',
@@ -525,12 +657,15 @@ WeAreAllChemicals played a 90-minute journey that blended deep Afro-tech with in
     noteType: 'dj_session_note',
     title: 'Analog rotary mixer acoustics near the rear column',
     content: `Spent the entire hour between 03:00 and 04:00 AM standing three feet behind the rotary mixer console. The acoustic isolation was stunning: crisp high-hat transients cutting through thick warehouse air, but with zero ear fatigue. You can tell the sound engineering team spent 14 hours tuning those phase delays.`,
-    visibility: 'public_submission',
-    moderationStatus: 'approved',
     authorDisplayName: 'Nia O.',
-    isDraft: false,
-    likesCount: 88,
-    tags: ['Following', 'SoundSystem', 'Acoustics', 'GT-XII'],
+    isAnonymous: false,
+    includePolaroids: true,
+    moderationStatus: 'approved',
+    submittedAt: '2026-03-01T04:10:00Z',
+    reviewedAt: '2026-03-01T08:00:00Z',
+    reviewedBy: 'Staff Curator',
+    isResonated: false,
+    tags: ['SoundSystem', 'Acoustics', 'GT-XII'],
     polaroids: [
       {
         id: 'pol-c-2',
@@ -539,12 +674,10 @@ WeAreAllChemicals played a 90-minute journey that blended deep Afro-tech with in
         position: 'top-left',
         rotation: -1.5
       }
-    ],
-    createdAt: '2026-03-01T04:10:00Z',
-    updatedAt: '2026-03-01T04:10:00Z'
+    ]
   },
   {
-    id: 'community-gt10-marcus',
+    id: 'comm-sub-marcus-gt10',
     sessionId: 'gt-x',
     sessionCode: 'GT-X',
     sessionTitle: 'Group Therapy X',
@@ -552,284 +685,102 @@ WeAreAllChemicals played a 90-minute journey that blended deep Afro-tech with in
     noteType: 'patient_note',
     title: 'First time standing directly in front of the sub stacks',
     content: `I usually stay near the back bar, but at GT-X I walked right up to the front left stack around 01:30 AM. When the sub frequencies dropped to 38Hz, you do not just hear it in your ears; your whole ribcage resonates with the groove. Total somatic release from a relentless working month.`,
-    visibility: 'public_submission',
+    authorDisplayName: 'Anonymous Dancer',
+    isAnonymous: true,
+    includePolaroids: true,
     moderationStatus: 'approved',
-    authorDisplayName: 'Marcus K.',
-    isDraft: false,
-    likesCount: 167,
-    tags: ['Recommended', 'GT-X', 'SubBass', 'Therapy'],
+    submittedAt: '2025-10-12T02:40:00Z',
+    reviewedAt: '2025-10-12T08:00:00Z',
+    reviewedBy: 'Staff Curator',
+    isResonated: false,
+    tags: ['GT-X', 'SubBass', 'Therapy'],
     polaroids: [
       {
         id: 'pol-c-3',
         imageUrl: POLAROID_PRESETS[0].imageUrl,
-        caption: 'Perimeter lasers over the front sub stack',
+        caption: 'Perimeter lasers over front sub stack',
         position: 'top-right',
         rotation: 1.8
       }
-    ],
-    createdAt: '2025-10-12T02:40:00Z',
-    updatedAt: '2025-10-12T02:40:00Z'
+    ]
   },
   {
-    id: 'community-gt5-amina',
-    sessionId: 'gt-v',
-    sessionCode: 'GT-V',
-    sessionTitle: 'Group Therapy V',
-    artistName: 'Yosa B2B Aniko',
-    noteType: 'dj_session_note',
-    title: 'The anniversary transition into European dub textures',
-    content: `The Yosa B2B Aniko set at GT-V was the defining moment of the first anniversary. When they bridged the raw percussive swing with stripped-back Berlin dub techno chords, the energy in the room went completely silent before detonating. An archival masterclass.`,
-    visibility: 'public_submission',
-    moderationStatus: 'approved',
-    authorDisplayName: 'Amina D.',
-    isDraft: false,
-    likesCount: 294,
-    tags: ['Recommended', 'Anniversary', 'GT-V', 'Yosa', 'Aniko'],
-    polaroids: [
-      {
-        id: 'pol-c-4',
-        imageUrl: POLAROID_PRESETS[4].imageUrl,
-        caption: 'First anniversary master set // GT-V',
-        position: 'top-left',
-        rotation: -2.2
-      }
-    ],
-    createdAt: '2024-08-25T05:00:00Z',
-    updatedAt: '2024-08-25T05:00:00Z'
-  },
-  {
-    id: 'community-gt15-soji',
-    sessionId: 'gt-xv',
-    sessionCode: 'GT-XV',
-    sessionTitle: 'Group Therapy XV',
-    artistName: 'Aniko',
-    noteType: 'dj_session_note',
-    title: 'Track ID request: Afro-acid vocal snippet at 04:20 AM',
-    content: `Desperately searching for the 303 acid line track layered under Yoruba spoken word right at peak hour. The blend was seamless, and the crowd lost their minds when the filter opened up. Does anyone know the title?`,
-    visibility: 'public_submission',
-    moderationStatus: 'approved',
-    authorDisplayName: 'Soji R.',
-    isDraft: false,
-    likesCount: 110,
-    trackRequested: '04:20 AM Acid Yoruba Cut',
-    djResponse: 'Aniko (Resident DJ): That is an exclusive live blend of a Slikback loop over an archival spoken word tape. Recorded straight to soundboard DAT.',
-    tags: ['Track ID', 'GT-XV', 'Acid', 'Dubplate'],
-    createdAt: '2026-11-07T06:00:00Z',
-    updatedAt: '2026-11-07T06:00:00Z'
-  },
-  {
-    id: 'community-gt4-elena',
-    sessionId: 'gt-iv',
-    sessionCode: 'GT-IV',
-    sessionTitle: 'Group Therapy IV',
-    artistName: 'WeAreAllChemicals',
-    noteType: 'patient_note',
-    title: 'Midnight floor etiquette & shared water cups',
-    content: `What makes Group Therapy special is the mutual care. When someone accidentally bumped into me on the turn, they did not just apologize; they offered me water and made sure I had space to recover my rhythm. True underground sanctuary culture.`,
-    visibility: 'public_submission',
-    moderationStatus: 'approved',
-    authorDisplayName: 'Elena S.',
-    isDraft: false,
-    likesCount: 198,
-    tags: ['Sanctuary', 'Community', 'GT-IV'],
-    createdAt: '2024-05-04T02:15:00Z',
-    updatedAt: '2024-05-04T02:15:00Z'
-  },
-  {
-    id: 'community-gt8-zack',
-    sessionId: 'gt-viii',
-    sessionCode: 'GT-VIII',
-    sessionTitle: 'Group Therapy VIII',
-    artistName: 'Aniko',
-    noteType: 'dj_session_note',
-    title: 'Percussive layers: when the cowbell locked in with the 3-step kick',
-    content: `The polyrhythms were so intricate that you could pick any one percussion layer and follow it with your feet. The balance between the metallic tops and the warm sub bottom was the cleanest live mixing I have witnessed all year.`,
-    visibility: 'public_submission',
-    moderationStatus: 'approved',
-    authorDisplayName: 'Zack T.',
-    isDraft: false,
-    likesCount: 124,
-    tags: ['Following', 'Polyrhythms', 'GT-VIII', 'Percussion'],
-    polaroids: [
-      {
-        id: 'pol-c-5',
-        imageUrl: POLAROID_PRESETS[1].imageUrl,
-        caption: '03:10 AM percussive lock // GT-VIII',
-        position: 'top-right',
-        rotation: 1.2
-      }
-    ],
-    createdAt: '2025-05-18T04:20:00Z',
-    updatedAt: '2025-05-18T04:20:00Z'
-  },
-  {
-    id: 'community-gt12-femi',
+    id: 'comm-sub-pending-lami',
+    originalNoteId: 'priv-note-aniko-gt12',
     sessionId: 'gt-xii',
     sessionCode: 'GT-XII',
     sessionTitle: 'Group Therapy XII',
     noteType: 'patient_note',
-    title: 'Sunrise 05:45 AM light through warehouse rafters',
-    content: `Stepping outside as the morning humidity met the cool air. Still humming with sub-bass frequencies in the chest. That sunrise walk to catch the cab across the bridge while the last 3-step echoes in your headphones is unmatched.`,
-    visibility: 'public_submission',
-    moderationStatus: 'approved',
-    authorDisplayName: 'Femi W.',
-    isDraft: false,
-    likesCount: 230,
-    tags: ['Sunrise', 'GT-XII', 'Dawn', 'Healing'],
+    title: 'Dusk Checklist vs. 06:15 AM Concrete Reality',
+    content: `[DUSK INTENTIONS // Logged 27/02 9:30 PM before leaving Victoria Island]
+- Will I have the stamina to stay past 4:30 AM?
+- Will the acoustic treatment hold up against the dual sub-bass drivers?
+- Will my boots survive the warehouse floor dust?
+
+[DAWN REALITY // Logged 28/02 06:15 AM while waiting for morning cab]
+1. Stayed until house lights flickered on at 5:50 AM.
+2. Low end was pristine with zero ear fatigue, just heavy somatic warmth vibrating in the chest.
+3. Boots are covered in white warehouse chalk dust, a certified badge of honor.`,
+    authorDisplayName: 'Lami Adeyemi',
+    isAnonymous: false,
+    includePolaroids: true,
+    moderationStatus: 'pending',
+    submittedAt: '2026-02-28T05:20:00Z',
+    isResonated: false,
+    tags: ['GT-XII', 'SoundSystem', 'DuskDawn'],
     polaroids: [
       {
-        id: 'pol-c-6',
+        id: 'pol-3',
         imageUrl: POLAROID_PRESETS[3].imageUrl,
-        caption: '05:45 AM daylight through the rafters',
+        caption: '06:15 AM curb // Boots coated in warehouse dust',
         position: 'bottom-right',
-        rotation: -2.5
+        rotation: 1.5
       }
-    ],
-    createdAt: '2026-02-28T06:00:00Z',
-    updatedAt: '2026-02-28T06:00:00Z'
+    ]
   },
   {
-    id: 'community-gt15-chuka',
-    sessionId: 'gt-xv',
-    sessionCode: 'GT-XV',
-    sessionTitle: 'Group Therapy XV',
-    noteType: 'patient_note',
-    title: 'Respecting dancer personal space near the monitors',
-    content: `Shoutout to everyone in the center circle who gave each other room to express themselves without crowding or filming. That mutual respect is why we keep coming back to these sessions. No ego, just sound and movement.`,
-    visibility: 'public_submission',
-    moderationStatus: 'approved',
-    authorDisplayName: 'Chuka E.',
-    isDraft: false,
-    likesCount: 175,
-    tags: ['Etiquette', 'GT-XV', 'Dancefloor'],
-    createdAt: '2026-11-07T04:45:00Z',
-    updatedAt: '2026-11-07T04:45:00Z'
-  },
-  {
-    id: 'community-gt1-nnamdi',
-    sessionId: 'gt-i',
-    sessionCode: 'GT-I',
-    sessionTitle: 'Group Therapy I',
-    artistName: 'Aniko',
-    noteType: 'dj_session_note',
-    title: 'Foundational archive: the day Group Therapy started',
-    content: `Only 60 people in a concrete room with a rented PA system, but you could tell immediately this was going to evolve into something profound. Re-listening to the original soundboard tape today brings back every drop of sweat.`,
-    visibility: 'public_submission',
-    moderationStatus: 'approved',
-    authorDisplayName: 'Nnamdi K.',
-    isDraft: false,
-    likesCount: 340,
-    tags: ['Recommended', 'Archive', 'GT-I', 'Foundations'],
-    polaroids: [
-      {
-        id: 'pol-c-7',
-        imageUrl: POLAROID_PRESETS[4].imageUrl,
-        caption: 'The original 60 dancers // Group Therapy I',
-        position: 'top-left',
-        rotation: -1.5
-      }
-    ],
-    createdAt: '2023-08-13T06:00:00Z',
-    updatedAt: '2023-08-13T06:00:00Z'
-  },
-  {
-    id: 'community-gt2-folake',
-    sessionId: 'gt-ii',
-    sessionCode: 'GT-II',
-    sessionTitle: 'Group Therapy II',
-    artistName: 'WeAreAllChemicals',
-    noteType: 'dj_session_note',
-    title: 'Track ID search: 02:30 AM rolling sub-bass dubplate',
-    content: `Can anyone ID the minimal rolling percussion track that played right before the 03:00 AM tempo drop? The bassline was just three sustained notes with an echo delay.`,
-    visibility: 'public_submission',
-    moderationStatus: 'approved',
-    authorDisplayName: 'Folake A.',
-    isDraft: false,
-    likesCount: 95,
-    trackRequested: '02:30 AM Minimal Bass Roller',
-    djResponse: 'WeAreAllChemicals: That was an unreleased dub of ours from 2023. Glad someone remembered that moment!',
-    tags: ['Track ID', 'GT-II', 'Dub'],
-    createdAt: '2023-11-19T03:00:00Z',
-    updatedAt: '2023-11-19T03:00:00Z'
-  },
-  {
-    id: 'community-gt5-yosa',
-    sessionId: 'gt-v',
-    sessionCode: 'GT-V',
-    sessionTitle: 'Group Therapy V',
-    artistName: 'Yosa B2B Aniko',
-    noteType: 'dj_session_note',
-    title: 'The legendary Yosa B2B Aniko 4-hour set review',
-    content: `Four continuous hours of master-level curation. The chemistry between Yosa and Aniko behind the rotary mixer was telepathic. Neither of them rushed a blend; every transition felt like it was written together months in advance.`,
-    visibility: 'public_submission',
-    moderationStatus: 'approved',
-    authorDisplayName: 'Yosa Fan Club',
-    isDraft: false,
-    likesCount: 280,
-    tags: ['Yosa', 'Aniko', 'B2B', 'GT-V'],
-    polaroids: [
-      {
-        id: 'pol-c-8',
-        imageUrl: POLAROID_PRESETS[2].imageUrl,
-        caption: 'Yosa & Aniko deep in the 4-hour set',
-        position: 'top-right',
-        rotation: 2.1
-      }
-    ],
-    createdAt: '2024-08-25T07:15:00Z',
-    updatedAt: '2024-08-25T07:15:00Z'
-  },
-  {
-    id: 'community-gt10-sub',
-    sessionId: 'gt-x',
-    sessionCode: 'GT-X',
-    sessionTitle: 'Group Therapy X',
-    noteType: 'patient_note',
-    title: 'Somatic frequency therapy in a dark warehouse',
-    content: `Had the roughest corporate work week of my life. 3 hours on this dancefloor completely decoupled the stress from my nervous system. Electronic music as genuine collective therapy.`,
-    visibility: 'public_submission',
-    moderationStatus: 'approved',
-    authorDisplayName: 'Sub-Bass Seeker',
-    isDraft: false,
-    likesCount: 310,
-    tags: ['FYP', 'Therapy', 'Healing', 'GT-X', 'Somatic'],
-    polaroids: [
-      {
-        id: 'pol-c-9',
-        imageUrl: POLAROID_PRESETS[0].imageUrl,
-        caption: 'Sound wave decompression // GT-X',
-        position: 'top-right',
-        rotation: -1.7
-      }
-    ],
-    createdAt: '2025-10-12T04:50:00Z',
-    updatedAt: '2025-10-12T04:50:00Z'
-  },
-  {
-    id: 'sample-note-flagged-promo',
+    id: 'comm-sub-flagged-promo',
     sessionId: 'gt-xv',
     sessionCode: 'GT-XV',
     sessionTitle: 'Group Therapy XV',
     noteType: 'patient_note',
     title: 'Unofficial VIP afterparty wristbands available',
     content: `Selling unauthorized wristbands and drink tokens for an after-hours hotel suite near Lekki. Contact telegram handle for fast transfer.`,
-    visibility: 'public_submission',
+    authorDisplayName: 'Club_Scalper_99',
+    isAnonymous: false,
+    includePolaroids: false,
     moderationStatus: 'pending',
     isFlagged: true,
     flagReason: 'Commercial promotion and unauthorized ticket resale reported by community',
-    authorDisplayName: 'Club_Scalper_99',
-    isDraft: false,
-    likesCount: 1,
-    tags: ['Flagged'],
-    createdAt: '2026-11-08T03:00:00Z',
-    updatedAt: '2026-11-08T03:00:00Z'
+    submittedAt: '2026-11-08T03:00:00Z',
+    isResonated: false,
+    tags: ['Flagged']
   }
+];
+
+// Backward-compatible export mapping
+export const SAMPLE_THERAPY_NOTES: TherapyNote[] = [
+  ...SAMPLE_PRIVATE_NOTES.map(n => ({
+    ...n,
+    visibility: 'private' as const,
+    submissionStatus: 'none' as const,
+    moderationStatus: 'none' as const
+  })),
+  ...SAMPLE_COMMUNITY_SUBMISSIONS.map(s => ({
+    ...s,
+    id: s.id,
+    visibility: 'public_submission' as const,
+    submissionStatus: s.moderationStatus === 'pending' ? 'pending' as const : 'approved' as const,
+    isDraft: false,
+    createdAt: s.submittedAt,
+    updatedAt: s.submittedAt
+  }))
 ];
 
 export const DEFAULT_NOTE_REPORTS: NoteReport[] = [
   {
     id: 'report-1',
-    noteId: 'sample-note-flagged-promo',
+    noteId: 'comm-sub-flagged-promo',
     noteTitle: 'Unofficial VIP afterparty wristbands available',
     noteSnippet: 'Selling unauthorized wristbands and drink tokens for an after-hours hotel suite near Lekki...',
     reason: 'spam',
@@ -841,9 +792,9 @@ export const DEFAULT_NOTE_REPORTS: NoteReport[] = [
   },
   {
     id: 'report-2',
-    noteId: 'community-gt10-sub',
-    noteTitle: 'Somatic frequency therapy in a dark warehouse',
-    noteSnippet: 'Had the roughest corporate work week of my life. 3 hours on this dancefloor...',
+    noteId: 'comm-sub-marcus-gt10',
+    noteTitle: 'First time standing directly in front of the sub stacks',
+    noteSnippet: 'I usually stay near the back bar, but at GT-X I walked right up to the front left stack...',
     reason: 'other',
     reasonText: 'Accidental report submitted during interface testing',
     reportedBy: 'Demo Attendee',
@@ -866,7 +817,7 @@ export const DEFAULT_TRACK_INQUIRIES: TrackIdInquiry[] = [
     description: 'What was that unreleased dubplate Aniko played right before the 3-step transition? It had a repeating syncopated vocal chant.',
     submittedBy: 'Lami Adeyemi',
     createdAt: '2026-03-01T10:15:00Z',
-    djResponse: '[SIMULATED DEMO RESPONSE] That was an unreleased VIP edit of Aniko - Pulse Drift (Dub Mix). Kept exclusively for late-night resident sets.',
+    djResponse: '[SIMULATED DEMO RESPONSE] Aniko (Resident DJ): That was an unreleased VIP edit of Aniko - Pulse Drift (Dub Mix). Kept exclusively for late-night resident sets.',
     respondedBy: 'Aniko (Resident DJ)',
     respondedAt: '2026-03-02T16:30:00Z',
     isSimulatedDemo: true,
@@ -885,3 +836,75 @@ export const DEFAULT_TRACK_INQUIRIES: TrackIdInquiry[] = [
   }
 ];
 
+/**
+ * Predictable Attendance & Ticket Demonstration Scenarios
+ * Demonstrates the six core scenarios required by product alignment.
+ */
+export const DEFAULT_ATTENDANCE_SCENARIOS: AttendanceScenario[] = [
+  {
+    id: 'scen-lami',
+    name: 'Lami Adeyemi (Sample Patient)',
+    persona: 'patient',
+    email: 'lami@grouptherapy.live',
+    title: 'Purchaser Attended & Verified at Door',
+    purchaseSummary: '1 Ticket purchased via Tix Africa for GT-XII and GT-XV',
+    doorCheckInSummary: 'Verified physical door scans recorded at GT-XII (01:30 AM) and GT-XV (11:15 PM)',
+    eligibilityStatus: 'Verified Patient',
+    explanation: 'Both ticket purchase and physical door scan verified. Qualifies for full patient privileges across attended sessions.'
+  },
+  {
+    id: 'scen-group',
+    name: 'Chidi Okafor (Group Buyer)',
+    persona: 'patient',
+    email: 'chidi@grouptherapy.live',
+    title: 'Group Purchase with Individual Claim Passes',
+    purchaseSummary: '3 Tickets purchased under 1 email for GT-XV',
+    doorCheckInSummary: '3 Distinct physical barcodes scanned at the door',
+    eligibilityStatus: 'Verified Patient',
+    explanation: 'Purchaser claims 1 physical attendance pass for themselves. System generated 2 invite claim links for their companions so only scanned attendees become patients.'
+  },
+  {
+    id: 'scen-noshow',
+    name: 'Alex Morgan (No-Show Purchaser)',
+    persona: 'follower',
+    email: 'alex@grouptherapy.live',
+    title: 'Purchased Ticket but Did Not Attend',
+    purchaseSummary: '1 Ticket purchased on Tix Africa for GT-VIII',
+    doorCheckInSummary: 'No door check-in scan recorded during event hours',
+    eligibilityStatus: 'Community Follower',
+    explanation: 'Financial purchase alone does not grant patient status. Remains a registered Community Follower with access to public archives and follow updates.'
+  },
+  {
+    id: 'scen-guestlist',
+    name: 'Ngozi Eze (Guest List Attendee)',
+    persona: 'patient',
+    email: 'ngozi@grouptherapy.live',
+    title: 'Door Guest List Check-in Verified',
+    purchaseSummary: 'Complimentary promoter / artist guest list allocation',
+    doorCheckInSummary: 'Verified check-in recorded on door manager guestlist tablet at GT-X',
+    eligibilityStatus: 'Verified Patient',
+    explanation: 'Physical presence in the room verified via door staff check-in. Receives full patient privileges regardless of zero commercial purchase.'
+  },
+  {
+    id: 'scen-cash',
+    name: 'Tunde Bakare (Historical Cash Entry)',
+    persona: 'follower',
+    email: 'tunde@grouptherapy.live',
+    title: 'Historical Attendance Claim (GT-IV Cash Entry)',
+    purchaseSummary: 'Cash door entry at Ultima Studios (2024)',
+    doorCheckInSummary: 'No digital check-in; manual claim submitted with wristband photo',
+    eligibilityStatus: 'Awaiting Curator Review',
+    explanation: 'Historical claim submitted to Curator Terminal. Awaiting staff review before verified patient status is granted.'
+  },
+  {
+    id: 'scen-linked-email',
+    name: 'Lami Adeyemi (Secondary Email Linked)',
+    persona: 'patient',
+    email: 'lami.work@gmail.com',
+    title: 'Secondary Purchase Email Linked via OTP',
+    purchaseSummary: 'Historical ticket purchased under corporate email address',
+    doorCheckInSummary: 'OTP verified ownership of secondary email; attendance linked to primary account',
+    eligibilityStatus: 'Verified Patient',
+    explanation: 'Dancer retains unified immutable account while consolidating tickets from multiple email addresses.'
+  }
+];

@@ -29,7 +29,8 @@ import {
   Send,
   Camera,
   Save,
-  AlertTriangle
+  AlertTriangle,
+  Ticket
 } from 'lucide-react';
 import { TherapyNote, AttachedPolaroid } from '../../types';
 import { POLAROID_PRESETS, PolaroidPreset } from '../../data/seedData';
@@ -55,7 +56,8 @@ export const NotesBrowserWindow: React.FC<NotesBrowserWindowProps> = ({
     reportNote,
     respondToTrackRequest,
     isFollowed,
-    saveNote
+    saveNote,
+    openVerifyModal
   } = useStore();
 
   const navigate = useNavigate();
@@ -142,13 +144,8 @@ export const NotesBrowserWindow: React.FC<NotesBrowserWindowProps> = ({
   // Filter notes based on active social media tab, session filter, and search
   const filteredFeedNotes = useMemo(() => {
     return notes.filter(note => {
-      // Flagged notes are automatically removed from the public feed
-      if (note.isFlagged) {
-        return false;
-      }
-
-      // Must be public or approved or have content
-      if (note.visibility === 'private' && note.moderationStatus === 'none') {
+      // Must be public or approved copy in community feed
+      if (note.visibility === 'private' && (note.moderationStatus === 'none' || !note.moderationStatus)) {
         // Still allow author to see their own notes in social feed if they created them
         if (note.authorDisplayName !== 'Lami Adeyemi' && note.authorDisplayName !== 'Attendee') {
           return false;
@@ -249,6 +246,7 @@ export const NotesBrowserWindow: React.FC<NotesBrowserWindowProps> = ({
       noteType: newPostIsTrackRequest ? 'dj_session_note' : 'patient_note',
       visibility: isPublic ? 'public_submission' : 'private',
       moderationStatus: isPublic ? 'approved' : 'none',
+      submissionStatus: isPublic ? 'approved' : 'none',
       authorDisplayName: persona === 'dj' ? 'Aniko' : (persona === 'patient' ? 'Lami Adeyemi' : 'Guest Patient'),
       trackRequested: newPostIsTrackRequest ? newPostTrackQuery.trim() : undefined,
       tags: newPostTags.length > 0 ? newPostTags : (newPostIsTrackRequest ? ['Track ID', 'Dancefloor'] : ['Community', 'Reflection']),
@@ -732,7 +730,41 @@ export const NotesBrowserWindow: React.FC<NotesBrowserWindowProps> = ({
               </div>
             )}
 
-            {filteredFeedNotes.length === 0 ? (
+            {persona === 'visitor' || persona === 'follower' ? (
+              <div
+                style={{
+                  padding: '60px 24px',
+                  textAlign: 'center',
+                  maxWidth: '580px',
+                  margin: '40px auto',
+                  backgroundColor: '#070a07',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(4, 229, 57, 0.3)',
+                  boxShadow: '0 12px 40px rgba(0,0,0,0.8)'
+                }}
+              >
+                <Lock size={40} color="var(--gt-acid)" style={{ margin: '0 auto 16px auto' }} />
+                <div className="case-ref-stamp" style={{ marginBottom: '8px' }}>
+                  MEMBERS-ONLY ARCHIVE // VERIFIED ATTENDANCE REQUIRED
+                </div>
+                <h3 style={{ fontSize: '1.4rem', fontFamily: 'var(--font-display)', color: 'var(--gt-cream)', marginBottom: '8px' }}>
+                  Community Reflections Reserved for Verified Members
+                </h3>
+                <p style={{ color: 'var(--gt-muted)', fontSize: '0.88rem', lineHeight: 1.6, marginBottom: '24px' }}>
+                  The Group Therapy community feed is restricted to verified members who have attended at least one session in person. You are currently exploring as a <strong>{persona === 'follower' ? 'Community Follower' : 'Public Visitor'}</strong>. Unverified visitors can freely browse the public session archive and lineups at <code>/sessions</code>.
+                </p>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+                  <button
+                    onClick={openVerifyModal}
+                    className="btn btn-primary"
+                    style={{ fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <Ticket size={14} />
+                    <span>Verify Ticket Email &amp; Unlock Community</span>
+                  </button>
+                </div>
+              </div>
+            ) : filteredFeedNotes.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--gt-muted)' }}>
                 <Sparkles size={32} color="var(--gt-acid)" style={{ margin: '0 auto 12px auto' }} />
                 <h3 style={{ fontSize: '1.2rem', fontFamily: 'var(--font-display)', color: 'var(--gt-cream)', marginBottom: '6px' }}>
@@ -1011,25 +1043,28 @@ export const NotesBrowserWindow: React.FC<NotesBrowserWindowProps> = ({
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        {/* Like / Heart Counter */}
+                        {/* Quiet Resonate Acknowledgment (No Public Scoreboard) */}
                         <button
                           onClick={() => toggleLikeNote(note.id)}
                           style={{
-                            background: 'none',
-                            border: 'none',
-                            color: isLiked ? '#ff5c2e' : 'var(--gt-muted)',
-                            display: 'flex',
+                            background: isLiked ? 'rgba(4, 229, 57, 0.12)' : 'rgba(255, 255, 255, 0.04)',
+                            border: `1px solid ${isLiked ? 'rgba(4, 229, 57, 0.35)' : 'rgba(255, 255, 255, 0.1)'}`,
+                            color: isLiked ? 'var(--gt-acid)' : 'var(--gt-muted)',
+                            display: 'inline-flex',
                             alignItems: 'center',
                             gap: '5px',
                             cursor: 'pointer',
-                            padding: '4px 6px',
+                            padding: '4px 10px',
                             borderRadius: '4px',
+                            fontSize: '0.74rem',
+                            fontFamily: 'var(--font-metadata)',
                             fontWeight: isLiked ? 700 : 500,
-                            transition: 'color 0.15s ease'
+                            transition: 'all 0.15s ease'
                           }}
+                          title="Acknowledge personal resonance with this reflection"
                         >
-                          <Heart size={15} fill={isLiked ? '#ff5c2e' : 'none'} />
-                          <span>{likes}</span>
+                          <Sparkles size={13} color={isLiked ? 'var(--gt-acid)' : 'var(--gt-muted)'} />
+                          <span>{isLiked ? 'Resonated' : 'Resonate'}</span>
                         </button>
 
                         {/* Report / Flag button */}

@@ -1,6 +1,8 @@
-export type DemoPersona = 'patient' | 'visitor' | 'dj' | 'admin';
+export type DemoPersona = 'patient' | 'visitor' | 'follower' | 'dj' | 'admin';
 
 export type BranchType = 'Group Therapy' | 'Side Quests';
+
+export type ArchivalStatus = 'confirmed' | 'partial_record' | 'awaiting_verification';
 
 export interface ArtistRef {
   name: string;
@@ -19,6 +21,7 @@ export interface Session {
   description: string;
   artists: ArtistRef[];
   lineupStatus: 'confirmed' | 'recorded_only' | 'pending';
+  archivalStatus: ArchivalStatus;
   confidence: 'high' | 'medium' | 'low';
   verificationNote: string;
   sourceUrls: string[];
@@ -60,13 +63,12 @@ export interface UserAttendance {
   state: AttendanceState;
   ticketHash?: string;
   verifiedAt?: string;
-  checkInSource?: 'door_scan_tix' | 'guestlist' | 'manual_review';
+  checkInSource?: 'door_scan_tix' | 'guestlist' | 'manual_review' | 'curator_archival';
+  ticketPurchasedOnly?: boolean;
 }
 
 export type NoteType = 'patient_note' | 'dj_session_note';
-export type NoteVisibility = 'private' | 'public_submission';
-export type ModerationStatus = 'none' | 'pending' | 'approved' | 'rejected' | 'declined';
-export type NoteSubmissionStatus = 'none' | 'pending' | 'approved' | 'declined';
+export type ModerationStatus = 'none' | 'pending' | 'approved' | 'rejected';
 
 export interface AttachedPolaroid {
   id: string;
@@ -76,7 +78,10 @@ export interface AttachedPolaroid {
   rotation: number;
 }
 
-export interface TherapyNote {
+/**
+ * Private Therapy Note (Strictly personal to the author)
+ */
+export interface PrivateTherapyNote {
   id: string;
   sessionId: string;
   sessionCode: string | null;
@@ -86,19 +91,38 @@ export interface TherapyNote {
   title?: string;
   content: string;
   promptUsed?: string;
-  visibility: NoteVisibility;
-  moderationStatus: ModerationStatus;
-  moderationFeedback?: string;
-  isDraft: boolean;
   polaroids?: AttachedPolaroid[];
-  authorDisplayName?: string;
-  isAnonymousSubmission?: boolean;
-  includePolaroidsInSubmission?: boolean;
-  submissionStatus?: NoteSubmissionStatus;
-  submittedAt?: string;
+  authorDisplayName: string;
+  isDraft: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Community Submission (Deliberately submitted copy for collective archive)
+ */
+export interface CommunitySubmission {
+  id: string;
+  originalNoteId?: string;
+  sessionId: string;
+  sessionCode: string | null;
+  sessionTitle: string;
+  artistName?: string;
+  noteType: NoteType;
+  title?: string;
+  content: string;
+  authorDisplayName: string;
+  isAnonymous: boolean;
+  includePolaroids: boolean;
+  polaroids?: AttachedPolaroid[];
+  moderationStatus: 'pending' | 'approved' | 'rejected';
+  moderationFeedback?: string;
+  submittedAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
   pinnedByDj?: boolean;
-  likesCount?: number;
-  isLiked?: boolean;
+  isResonated?: boolean;
+  resonanceCount?: number;
   isFlagged?: boolean;
   reportCount?: number;
   reportedBy?: string[];
@@ -107,9 +131,20 @@ export interface TherapyNote {
   tags?: string[];
   djResponse?: string;
   isSimulatedDemo?: boolean;
-  createdAt: string;
-  updatedAt: string;
 }
+
+export type NoteVisibility = 'private' | 'public_submission';
+
+// Backward-compatible TherapyNote interface
+export type TherapyNote = PrivateTherapyNote & Omit<Partial<CommunitySubmission>, 'moderationStatus'> & {
+  visibility?: NoteVisibility;
+  submissionStatus?: 'none' | 'pending' | 'approved' | 'declined' | 'rejected';
+  moderationStatus?: 'none' | 'pending' | 'approved' | 'rejected' | 'declined';
+  likesCount?: number;
+  isLiked?: boolean;
+  isAnonymousSubmission?: boolean;
+  includePolaroidsInSubmission?: boolean;
+};
 
 export interface NoteReport {
   id: string;
@@ -174,4 +209,16 @@ export interface NotificationItem {
   date: string;
   isRead: boolean;
   actionUrl?: string;
+}
+
+export interface AttendanceScenario {
+  id: string;
+  name: string;
+  persona: DemoPersona;
+  email: string;
+  title: string;
+  purchaseSummary: string;
+  doorCheckInSummary: string;
+  eligibilityStatus: 'Verified Patient' | 'Community Follower' | 'Awaiting Curator Review';
+  explanation: string;
 }

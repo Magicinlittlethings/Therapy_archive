@@ -49,6 +49,17 @@ export const TourGuide: React.FC = () => {
       ],
       actionPrompt: 'Open My Files or draft a reflection for an attended session.'
     },
+    follower: {
+      title: 'Community Follower',
+      subtitle: 'Interested listener / Unverified attendance',
+      description: 'As a Community Follower, you can explore all public archives, session history, published recordings and lineups. However, personal patient privileges (such as writing Therapy Notes, filing Track ID inquiries, and personal dossiers) require verified physical attendance.',
+      highlights: [
+        'Explore the full GT-I to GT-XV session archive',
+        'Listen to synthetic soundboard demonstrations and review tracklists',
+        'Verify attendance with a ticket purchase email or claim pass to unlock patient privileges'
+      ],
+      actionPrompt: 'Browse the session archive or simulate verifying attendance with your ticket email.'
+    },
     visitor: {
       title: 'Public Visitor',
       subtitle: 'Open music archive & session history',

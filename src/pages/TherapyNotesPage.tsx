@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
 import { REFLECTION_PROMPTS, POLAROID_PRESETS, PolaroidPreset } from '../data/seedData';
-import { NoteType, AttachedPolaroid, NoteVisibility, TherapyNote } from '../types';
+import { NoteType, AttachedPolaroid } from '../types';
 import { GTDropdown, DropdownOption } from '../components/common/GTDropdown';
 import {
   Lock,
   Sparkles,
-  Save,
   Trash2,
   Send,
   Check,
@@ -15,16 +14,10 @@ import {
   User,
   Disc3,
   AlertTriangle,
-  Flame,
-  HelpCircle,
   Camera,
-  Plus,
-  Image as ImageIcon,
-  Pin,
-  Globe,
-  Eye,
   ShieldAlert,
-  Headphones
+  Ticket,
+  Clock
 } from 'lucide-react';
 
 export const TherapyNotesPage: React.FC = () => {
@@ -32,38 +25,25 @@ export const TherapyNotesPage: React.FC = () => {
   const navigate = useNavigate();
   const {
     sessions,
-    notes,
-    materials,
-    saveNote,
+    privateNotes,
+    communitySubmissions,
+    savePrivateNote,
     deleteNote,
-    submitNoteForModeration,
     submitNoteToCommunity,
     withdrawCommunitySubmission,
     persona,
-    setPersona,
     attachPolaroidToNote,
-    removePolaroidFromNote,
-    getAttendance
+    getAttendance,
+    openVerifyModal
   } = useStore();
 
   const [activeSessionId, setActiveSessionId] = useState<string>(paramSessionId || 'gt-xii');
   const session = sessions.find(s => s.id === activeSessionId) || sessions[0];
   const attendance = getAttendance(session.id);
-  const isVerifiedAttended = persona === 'dj' || attendance === 'attended';
+  const isVerifiedAttended = persona === 'dj' || persona === 'admin' || attendance === 'attended';
 
-  // Notes written by the current active persona for this session
-  // Patient only sees their own reflections in their notebook dossier; community notes appear in notes.html
-  const isMyAuthoredNote = (n: TherapyNote) => {
-    if (persona === 'patient') {
-      return n.authorDisplayName === 'Lami Adeyemi' || !n.authorDisplayName || n.authorDisplayName === 'Patient' || n.authorDisplayName === 'Attendee';
-    }
-    if (persona === 'dj') {
-      return n.authorDisplayName?.includes('Aniko') || n.noteType === 'dj_session_note';
-    }
-    return true;
-  };
-
-  const sessionNotes = notes.filter(n => n.sessionId === session.id && isMyAuthoredNote(n));
+  // Notes written by the current active persona for this session in their private notebook
+  const sessionNotes = privateNotes.filter(n => n.sessionId === session.id);
 
   // Active Note State
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(
@@ -71,14 +51,13 @@ export const TherapyNotesPage: React.FC = () => {
   );
 
   const [noteType, setNoteType] = useState<NoteType>('patient_note');
-  const [noteVisibility, setNoteVisibility] = useState<NoteVisibility>('private');
   const [noteTitle, setNoteTitle] = useState<string>('');
   const [selectedArtist, setSelectedArtist] = useState<string>(
     session.artists.length > 0 ? session.artists[0].name : 'Aniko'
   );
   const [content, setContent] = useState<string>('');
   const [activePrompt, setActivePrompt] = useState<string>('');
-  const [saveStatus, setSaveStatus] = useState<string>('Saved locally');
+  const [saveStatus, setSaveStatus] = useState<string>('Draft saved locally');
 
   // Polaroid Attachments State
   const [polaroidModalOpen, setPolaroidModalOpen] = useState(false);
@@ -97,84 +76,66 @@ export const TherapyNotesPage: React.FC = () => {
   // Load selected note into editor
   useEffect(() => {
     if (selectedNoteId) {
-      const existing = notes.find(n => n.id === selectedNoteId);
+      const existing = privateNotes.find(n => n.id === selectedNoteId);
       if (existing) {
         setNoteType(existing.noteType);
-        setNoteVisibility(existing.visibility || 'private');
         setNoteTitle(existing.title || '');
         setSelectedArtist(existing.artistName || (session.artists[0]?.name || 'Aniko'));
         setContent(existing.content);
         setActivePrompt(existing.promptUsed || '');
-        setSaveStatus(`Loaded (${new Date(existing.updatedAt).toLocaleTimeString()})`);
+        setSaveStatus(`Loaded (${new Date(existing.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`);
       }
     } else {
       setNoteType('patient_note');
-      setNoteVisibility('private');
       setNoteTitle('');
       setSelectedArtist(session.artists[0]?.name || 'Aniko');
       setContent('');
       setActivePrompt('');
       setSaveStatus('New clean reflection');
     }
-  }, [selectedNoteId, activeSessionId, notes, session]);
+  }, [selectedNoteId, activeSessionId, privateNotes, session]);
 
   // Handle session change
   const handleSessionChange = (newSessionId: string) => {
     setActiveSessionId(newSessionId);
-    const newSessionNotes = notes.filter(n => n.sessionId === newSessionId && isMyAuthoredNote(n));
+    const newSessionNotes = privateNotes.filter(n => n.sessionId === newSessionId);
     setSelectedNoteId(newSessionNotes.length > 0 ? newSessionNotes[0].id : null);
     navigate(`/my-sessions/${newSessionId}/notes`);
   };
 
-  // Autosave
-  const persistNote = (
-    newText: string,
-    newTitle: string,
-    newType: NoteType,
-    newArtist?: string,
-    prompt?: string,
-    visibilityOverride?: NoteVisibility
-  ) => {
-    const existing = notes.find(n => n.id === selectedNoteId);
-    const vis = visibilityOverride !== undefined ? visibilityOverride : noteVisibility;
-    const noteData = {
-      id: selectedNoteId || undefined,
-      sessionId: session.id,
-      sessionCode: session.sessionCode,
-      sessionTitle: session.title,
-      artistName: newType === 'dj_session_note' ? (newArtist || selectedArtist) : undefined,
-      noteType: newType,
-      title: newTitle || undefined,
-      content: newText,
-      promptUsed: prompt !== undefined ? prompt : activePrompt,
-      visibility: vis,
-      moderationStatus: vis === 'public_submission' ? 'approved' : (existing?.moderationStatus || 'none'),
-      polaroids: existing?.polaroids || [],
-      isDraft: true
-    };
-
-    const savedId = saveNote(noteData);
-    if (!selectedNoteId) {
-      setSelectedNoteId(savedId);
+  // Debounced autosave effect (800ms)
+  useEffect(() => {
+    if (!selectedNoteId && !content.trim() && !noteTitle.trim()) {
+      return;
     }
-    setSaveStatus(`Saved locally at ${new Date().toLocaleTimeString()}`);
-  };
 
-  const handleVisibilityChange = (newVis: NoteVisibility) => {
-    setNoteVisibility(newVis);
-    persistNote(content, noteTitle, noteType, selectedArtist, activePrompt, newVis);
-  };
+    const timer = setTimeout(() => {
+      const activeExisting = selectedNoteId ? privateNotes.find(n => n.id === selectedNoteId) : null;
+      const targetId = selectedNoteId || `priv-note-${Date.now()}`;
 
-  const handleContentChange = (newText: string) => {
-    setContent(newText);
-    setSaveStatus('Saving draft...');
-    persistNote(newText, noteTitle, noteType, selectedArtist);
-  };
+      savePrivateNote({
+        id: targetId,
+        sessionId: session.id,
+        sessionCode: session.sessionCode,
+        sessionTitle: session.title,
+        artistName: noteType === 'dj_session_note' ? selectedArtist : undefined,
+        noteType,
+        title: noteTitle || undefined,
+        content,
+        promptUsed: activePrompt || undefined,
+        polaroids: activeExisting?.polaroids || [],
+        authorDisplayName: persona === 'dj' ? 'Aniko' : 'Lami Adeyemi',
+        isDraft: false
+      });
 
-  const handleTitleChange = (newTitle: string) => {
-    setNoteTitle(newTitle);
-    persistNote(content, newTitle, noteType, selectedArtist);
-  };
+      if (!selectedNoteId) {
+        setSelectedNoteId(targetId);
+      }
+      setSaveStatus(`Draft saved locally at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [content, noteTitle, noteType, selectedArtist, activePrompt, selectedNoteId, session.id]);
 
   const handleCreateNew = () => {
     setSelectedNoteId(null);
@@ -182,12 +143,11 @@ export const TherapyNotesPage: React.FC = () => {
     setContent('');
     setActivePrompt('');
     setNoteType('patient_note');
-    setNoteVisibility('private');
     setSaveStatus('New clean reflection');
   };
 
   const handleDelete = () => {
-    if (selectedNoteId && confirm('Permanently discard this reflection?')) {
+    if (selectedNoteId && confirm('Permanently discard this private reflection from your notebook?')) {
       deleteNote(selectedNoteId);
       setSelectedNoteId(null);
       setNoteTitle('');
@@ -199,9 +159,7 @@ export const TherapyNotesPage: React.FC = () => {
   const handleApplyPrompt = (prompt: string) => {
     setActivePrompt(prompt);
     if (!content.trim()) {
-      const initial = `[Prompt: ${prompt}]\n\n`;
-      setContent(initial);
-      persistNote(initial, noteTitle, noteType, selectedArtist, prompt);
+      setContent(`[Prompt: ${prompt}]\n\n`);
     }
   };
 
@@ -242,32 +200,31 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
     setNoteType(tType);
     setNoteTitle(templateTitle);
     setContent(templateText);
-    persistNote(templateText, templateTitle, tType, selectedArtist);
   };
 
   const handleAttachPolaroid = () => {
+    const noteIdToUse = selectedNoteId || `priv-note-${Date.now()}`;
     if (!selectedNoteId) {
-      // Create draft note first
-      const newId = saveNote({
+      savePrivateNote({
+        id: noteIdToUse,
         sessionId: session.id,
         sessionCode: session.sessionCode,
         sessionTitle: session.title,
         noteType,
-        title: noteTitle || 'Untitled Therapy Note',
+        title: noteTitle || 'Untitled Reflection',
         content,
-        visibility: 'private',
-        isDraft: true
+        authorDisplayName: persona === 'dj' ? 'Aniko' : 'Lami Adeyemi',
+        isDraft: false
       });
-      setSelectedNoteId(newId);
+      setSelectedNoteId(noteIdToUse);
     }
 
-    const noteIdToUse = selectedNoteId || `note-${Date.now()}`;
     const newPolaroid: AttachedPolaroid = {
       id: `pol-${Date.now()}`,
       imageUrl: customImageUrl.trim() || selectedPreset.imageUrl,
       caption: polaroidCaption.trim() || selectedPreset.defaultCaption,
       position: polaroidPosition,
-      rotation: Math.round((Math.random() * 5 - 2.5) * 10) / 10 // between -2.5 and +2.5 deg
+      rotation: Math.round((Math.random() * 5 - 2.5) * 10) / 10
     };
 
     attachPolaroidToNote(noteIdToUse, newPolaroid);
@@ -289,30 +246,32 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
     }, 1800);
   };
 
-  const activeNote = notes.find(n => n.id === selectedNoteId);
+  const activeNote = privateNotes.find(n => n.id === selectedNoteId);
+  const associatedSubmission = communitySubmissions.find(s => s.originalNoteId === selectedNoteId || s.id === selectedNoteId);
 
-  // Visitor Access Lock
-  if (persona === 'visitor') {
+  // Visitor or Follower Attendance Access Gate
+  if (persona === 'visitor' || persona === 'follower') {
     return (
       <div className="container" style={{ padding: 'var(--space-3xl) var(--space-md)', textAlign: 'center' }}>
         <div className="archival-panel-raised" style={{ maxWidth: '620px', margin: '0 auto', padding: 'var(--space-2xl)' }}>
           <Lock size={44} color="var(--gt-acid)" style={{ marginBottom: 'var(--space-sm)' }} />
           <div className="case-ref-stamp" style={{ marginBottom: '8px' }}>
-            CONFIDENTIAL ENCLAVE // PUBLIC ACCESS RESTRICTED
+            CONFIDENTIAL ENCLAVE // VERIFIED ATTENDANCE REQUIRED
           </div>
           <h2 style={{ fontSize: '1.8rem', fontFamily: 'var(--font-display)', marginBottom: 'var(--space-xs)' }}>
-            Therapy Notes Enclave Locked
+            Therapy Notes Reserved for Verified Attendees
           </h2>
           <p style={{ color: 'var(--gt-muted)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: 'var(--space-xl)' }}>
-            You are exploring as a <strong>Public Visitor</strong>. Therapy Notes are intimate, encrypted personal reflections tied to patient accounts and attendance records. Switch your role using the dropdown at top or the quick buttons below to read or write reflections.
+            You are browsing as a <strong>{persona === 'follower' ? 'Community Follower' : 'Public Visitor'}</strong>. Personal Therapy Notes are private reflections created by patients whose physical door attendance was verified at a Group Therapy gathering.
           </p>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
-            <button onClick={() => setPersona('patient')} className="btn btn-primary" style={{ fontSize: '0.8rem' }}>
-              Switch to Patient
+            <button onClick={openVerifyModal} className="btn btn-primary" style={{ fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Ticket size={14} />
+              <span>Verify Ticket &amp; Attendance</span>
             </button>
             <Link to="/sessions" className="btn btn-ghost" style={{ fontSize: '0.8rem' }}>
-              Browse Collective Archive
+              Browse Public Session Archive
             </Link>
           </div>
         </div>
@@ -342,6 +301,28 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
 
   return (
     <div style={{ padding: '28px 32px 80px', maxWidth: '1400px', margin: '0 auto', overflowY: 'auto', height: '100%', boxSizing: 'border-box' }}>
+      {/* Prototype Privacy Notice Banner */}
+      <div
+        style={{
+          padding: '10px 16px',
+          backgroundColor: 'rgba(4, 229, 57, 0.05)',
+          border: '1px solid rgba(4, 229, 57, 0.25)',
+          borderRadius: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          fontSize: '0.75rem',
+          fontFamily: 'var(--font-metadata)',
+          color: 'var(--gt-cream)',
+          marginBottom: '16px'
+        }}
+      >
+        <Lock size={14} color="var(--gt-acid)" style={{ flexShrink: 0 }} />
+        <span>
+          <strong style={{ color: 'var(--gt-acid)' }}>PROTOTYPE NOTICE:</strong> Private notes are stored strictly in your browser's local sandbox (<code>localStorage</code>). In production, private reflections are client-encrypted with your private session key and cannot be accessed by resident DJs, curators, or other attendees.
+        </span>
+      </div>
+
       {/* OS Notes App Toolbar */}
       <div
         style={{
@@ -378,7 +359,7 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
             <span>{session.title.toUpperCase()}</span>
           </Link>
 
-          {/* Session Selector (Using Theme-Compliant GTDropdown with clean inline height) */}
+          {/* Session Selector */}
           <GTDropdown
             options={sessionOptions}
             value={activeSessionId}
@@ -389,6 +370,11 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-metadata)', color: 'var(--gt-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <Clock size={12} />
+            <span>{saveStatus}</span>
+          </span>
+
           <button
             onClick={handleCreateNew}
             className="btn btn-outline-neon"
@@ -399,9 +385,7 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
         </div>
       </div>
 
-
-
-      {/* Editor Layout: Left Column (Saved Notes / Jump to Verified) + Right Column (Ruled Notebook or Public Records) */}
+      {/* Editor Layout: Left Column (Saved Notes / Jump to Verified) + Right Column (Ruled Notebook) */}
       <div style={{ display: 'grid', gridTemplateColumns: '290px 1fr', gap: 'var(--space-lg)' }} className="notes-grid">
         {/* Left Column: Note Dossier Selector */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
@@ -425,7 +409,7 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
                   {sessionNotes.map(n => {
                     const isSelected = selectedNoteId === n.id;
                     const hasPolaroids = n.polaroids && n.polaroids.length > 0;
-                    const isPublic = n.visibility === 'public_submission' || n.moderationStatus === 'approved';
+                    const hasSub = communitySubmissions.some(s => s.originalNoteId === n.id || s.id === n.id);
                     return (
                       <div
                         key={n.id}
@@ -456,12 +440,12 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
                                 fontFamily: 'var(--font-metadata)',
                                 padding: '1px 5px',
                                 borderRadius: '3px',
-                                backgroundColor: isPublic ? 'rgba(4, 229, 57, 0.15)' : 'rgba(255, 255, 255, 0.08)',
-                                color: isPublic ? 'var(--gt-acid)' : 'var(--gt-muted)',
-                                border: `1px solid ${isPublic ? 'rgba(4, 229, 57, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`
+                                backgroundColor: hasSub ? 'rgba(4, 229, 57, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                                color: hasSub ? 'var(--gt-acid)' : 'var(--gt-muted)',
+                                border: `1px solid ${hasSub ? 'rgba(4, 229, 57, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`
                               }}
                             >
-                              {isPublic ? 'PUBLIC' : 'PRIVATE'}
+                              {hasSub ? 'SUBMITTED COPY' : 'PRIVATE'}
                             </span>
                           </div>
                         </div>
@@ -485,7 +469,7 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
                 </div>
               ) : (
                 <p style={{ color: 'var(--gt-muted)', fontSize: '0.8rem', fontStyle: 'italic', padding: 'var(--space-sm) 0' }}>
-                  No notes for this session yet. Begin writing below.
+                  No private notes for this session yet. Begin writing on the notebook page.
                 </p>
               )}
             </div>
@@ -499,7 +483,7 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
                 </span>
               </div>
               <p style={{ color: 'var(--gt-muted)', fontSize: '0.78rem', lineHeight: 1.5, marginBottom: '16px' }}>
-                You did not attend this gathering. Door-verified attendance is required to author private or public therapy notes.
+                You did not attend this gathering. Door-verified attendance is required to author private reflections.
               </p>
 
               <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '12px' }}>
@@ -548,16 +532,16 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--gt-acid)', fontWeight: 800, marginBottom: '4px', fontFamily: 'var(--font-metadata)' }}>
               <Lock size={14} />
-              <span>PRIVATE OR PUBLIC NOTES</span>
+              <span>PRIVATE NOTEBOOK INTEGRITY</span>
             </div>
-            For sessions you attended, choose <strong>Private</strong> to keep notes in your personal device dossier, or <strong>Public</strong> to share on the community case file wall.
+            Your notebook entries are strictly personal to your account. Submitting a note to the community archive creates an isolated moderation copy; your private note remains in your notebook and can be edited or kept forever.
           </div>
         </div>
 
         {/* Right Column: Ruled Lined Notebook (Verified) OR Public Records Enclave (Unattended) */}
         {isVerifiedAttended ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-            {/* Note Type & Visibility Toolbar */}
+            {/* Note Type Switcher & Controls */}
             <div
               style={{
                 display: 'flex',
@@ -575,10 +559,7 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                 <button
                   type="button"
-                  onClick={() => {
-                    setNoteType('patient_note');
-                    persistNote(content, noteTitle, 'patient_note', selectedArtist);
-                  }}
+                  onClick={() => setNoteType('patient_note')}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -600,10 +581,7 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setNoteType('dj_session_note');
-                    persistNote(content, noteTitle, 'dj_session_note', selectedArtist);
-                  }}
+                  onClick={() => setNoteType('dj_session_note')}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -633,10 +611,7 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
                   <GTDropdown
                     options={artistOptions}
                     value={selectedArtist}
-                    onChange={newArtist => {
-                      setSelectedArtist(newArtist);
-                      persistNote(content, noteTitle, noteType, newArtist);
-                    }}
+                    onChange={setSelectedArtist}
                     variant="subtle"
                     width={180}
                   />
@@ -655,81 +630,12 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
               </button>
             </div>
 
-            {/* Note Visibility Selector & Status Strip */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '10px',
-                padding: '10px 14px',
-                backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: 'var(--radius-xs)'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-metadata)', color: 'var(--gt-muted)', fontWeight: 600 }}>
-                  NOTE VISIBILITY:
-                </span>
-                <div style={{ display: 'flex', backgroundColor: '#050705', padding: '2px', borderRadius: '4px', border: '1px solid rgba(255, 255, 255, 0.12)' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleVisibilityChange('private')}
-                    style={{
-                      padding: '5px 12px',
-                      fontSize: '0.75rem',
-                      borderRadius: '3px',
-                      border: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                      backgroundColor: noteVisibility === 'private' ? 'rgba(255, 255, 255, 0.16)' : 'transparent',
-                      color: noteVisibility === 'private' ? 'var(--gt-cream)' : 'var(--gt-muted)'
-                    }}
-                  >
-                    <Lock size={12} />
-                    <span>Private Note</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleVisibilityChange('public_submission')}
-                    style={{
-                      padding: '5px 12px',
-                      fontSize: '0.75rem',
-                      borderRadius: '3px',
-                      border: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                      backgroundColor: noteVisibility === 'public_submission' ? 'rgba(4, 229, 57, 0.2)' : 'transparent',
-                      color: noteVisibility === 'public_submission' ? 'var(--gt-acid)' : 'var(--gt-muted)'
-                    }}
-                  >
-                    <Globe size={12} />
-                    <span>Public Note</span>
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ fontSize: '0.7rem', fontFamily: 'var(--font-metadata)', color: noteVisibility === 'private' ? 'var(--gt-muted)' : 'var(--gt-acid)' }}>
-                {noteVisibility === 'private'
-                  ? '// Stored locally in your patient dossier'
-                  : '// Published to community feed & session case file'}
-              </div>
-            </div>
-
             {/* Note Title Input */}
             <div>
               <input
                 type="text"
                 value={noteTitle}
-                onChange={e => handleTitleChange(e.target.value)}
+                onChange={e => setNoteTitle(e.target.value)}
                 placeholder="Title this reflection (e.g. The 4:00 AM frequency shift behind the booth)..."
                 style={{
                   width: '100%',
@@ -764,11 +670,11 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--gt-cream)' }}>
-                  <span style={{ color: 'var(--gt-acid)', fontWeight: 700 }}>THERAPY NOTE //</span>
+                  <span style={{ color: 'var(--gt-acid)', fontWeight: 700 }}>PRIVATE THERAPY NOTE //</span>
                   <span style={{ color: 'var(--gt-muted)', fontSize: '0.72rem' }}>
                     {attachedPolaroids.length === 0
-                      ? 'Attach personal reflections and photos onto this note'
-                      : `${attachedPolaroids.length} Photo${attachedPolaroids.length > 1 ? 's' : ''} attached to this page`}
+                      ? 'Personal reflections & attached photos'
+                      : `${attachedPolaroids.length} Photo${attachedPolaroids.length > 1 ? 's' : ''} pinned to page`}
                   </span>
                 </div>
 
@@ -778,28 +684,26 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
                   className="btn btn-outline-neon"
                   style={{ fontSize: '0.72rem', padding: '4px 10px', minHeight: '28px', gap: '5px' }}
                 >
-                  <Camera size={13} />
-                  <span>+ Attach Photo</span>
+                  <Camera size={12} />
+                  <span>Pin Photo</span>
                 </button>
               </div>
 
-              {/* Display Attached Polaroids as real taped photos on the notebook page */}
+              {/* Taped Polaroids Container */}
               {attachedPolaroids.length > 0 && (
                 <div
                   style={{
                     display: 'flex',
                     flexWrap: 'wrap',
-                    gap: '16px',
-                    padding: '20px 24px 16px 24px',
-                    backgroundColor: 'rgba(0, 0, 0, 0.25)',
-                    borderBottom: '1px dashed var(--notebook-line)',
-                    justifyContent: 'flex-start',
-                    alignItems: 'flex-start'
+                    gap: '18px',
+                    padding: '20px 20px 10px 62px',
+                    position: 'relative',
+                    zIndex: 2
                   }}
                 >
-                  {attachedPolaroids.map((pol, idx) => (
+                  {attachedPolaroids.map((pol) => (
                     <div
-                      key={pol.id || idx}
+                      key={pol.id}
                       className="polaroid-card"
                       style={{
                         transform: `rotate(${pol.rotation}deg)`,
@@ -813,71 +717,68 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
                       <div className="polaroid-caption">
                         {pol.caption}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => selectedNoteId && removePolaroidFromNote(selectedNoteId, pol.id)}
-                        style={{
-                          position: 'absolute',
-                          top: '-6px',
-                          right: '-6px',
-                          width: '20px',
-                          height: '20px',
-                          borderRadius: '50%',
-                          backgroundColor: '#e42335',
-                          color: '#fff',
-                          border: 'none',
-                          fontSize: '11px',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
-                          zIndex: 30
-                        }}
-                        title="Detach Polaroid"
-                      >
-                        ✕
-                      </button>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Ruled Notebook Writing Area */}
-              <textarea
-                className="notebook-lined-textarea"
-                value={content}
-                onChange={e => handleContentChange(e.target.value)}
-                placeholder="What happened on the floor? Write line by line: the syncopation, the crowd perimeter, the unreleased 3-step roll, or the sunrise walk home..."
-              />
+              {/* Ruled Textarea with Red Margin Guide */}
+              <div style={{ position: 'relative', flex: 1, minHeight: '380px' }}>
+                <div className="notebook-margin-line"></div>
+                <textarea
+                  value={content}
+                  onChange={e => setContent(e.target.value)}
+                  placeholder="Record what happened on the floor, the transition that shifted the room, or how your perimeter was protected..."
+                  className="notebook-ruled-textarea"
+                  style={{ minHeight: '380px' }}
+                />
+              </div>
 
-              {/* Notebook Footer Strip */}
+              {/* Guided Reflection Starters */}
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '8px 16px 8px 62px',
+                  gap: '8px',
+                  padding: '10px 16px 10px 62px',
                   borderTop: '1px solid var(--notebook-line)',
-                  backgroundColor: '#050605',
-                  fontSize: '0.72rem',
-                  fontFamily: 'var(--font-metadata)',
-                  color: 'var(--gt-muted)'
+                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  flexWrap: 'wrap'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--gt-acid)' }}>
-                  <Save size={12} />
-                  <span>{saveStatus}</span>
-                </div>
+                <span style={{ fontSize: '0.7rem', fontFamily: 'var(--font-metadata)', color: 'var(--gt-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <Sparkles size={11} color="var(--gt-acid)" />
+                  <span>STARTER TEMPLATES:</span>
+                </span>
 
-                <div>
-                  {content.split('\n').length} LINES // {content.length} CHARS
-                </div>
+                <button
+                  type="button"
+                  onClick={() => handleInsertTemplate('qa')}
+                  className="btn btn-ghost"
+                  style={{ fontSize: '0.68rem', padding: '2px 8px', height: '24px', color: 'var(--gt-acid)', border: '1px solid rgba(4,229,57,0.2)' }}
+                >
+                  Dusk vs. Dawn Q&amp;A
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInsertTemplate('aniko')}
+                  className="btn btn-ghost"
+                  style={{ fontSize: '0.68rem', padding: '2px 8px', height: '24px', color: 'var(--gt-cream)', border: '1px solid rgba(255,255,255,0.1)' }}
+                >
+                  Booth Frequency Shift
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInsertTemplate('crowd')}
+                  className="btn btn-ghost"
+                  style={{ fontSize: '0.68rem', padding: '2px 8px', height: '24px', color: 'var(--gt-cream)', border: '1px solid rgba(255,255,255,0.1)' }}
+                >
+                  Perimeter Respect
+                </button>
               </div>
             </div>
 
-            {/* Action Bar: Discard & Community Submission */}
+            {/* Action Bar: Discard & Community Submission Management */}
             <div
               style={{
                 display: 'flex',
@@ -889,35 +790,45 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
               }}
             >
               <div>
-                {activeNote?.submissionStatus === 'approved' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--gt-acid)', fontFamily: 'var(--font-metadata)', fontSize: '0.75rem' }}>
+                {associatedSubmission && associatedSubmission.moderationStatus === 'approved' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--gt-acid)', fontFamily: 'var(--font-metadata)', fontSize: '0.75rem' }}>
                     <Check size={14} />
-                    <span>STATUS: APPROVED // PUBLISHED IN COMMUNITY ARCHIVE</span>
-                  </div>
-                )}
-                {activeNote?.submissionStatus === 'pending' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ffb830', fontFamily: 'var(--font-metadata)', fontSize: '0.75rem' }}>
-                    <span>● STATUS: PENDING CURATOR REVIEW</span>
+                    <span>STATUS: APPROVED IN COMMUNITY ARCHIVE</span>
                     <button
                       type="button"
                       onClick={() => selectedNoteId && withdrawCommunitySubmission(selectedNoteId)}
                       className="btn btn-ghost"
-                      style={{ fontSize: '0.7rem', padding: '2px 8px', color: 'var(--gt-muted)', border: '1px solid rgba(255,255,255,0.15)' }}
+                      style={{ fontSize: '0.68rem', padding: '2px 8px', color: 'var(--gt-muted)', border: '1px solid rgba(255,255,255,0.15)' }}
+                      title="Withdraw copy from community archive"
                     >
                       Withdraw Submission
                     </button>
                   </div>
                 )}
-                {activeNote?.submissionStatus === 'declined' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--gt-muted)', fontFamily: 'var(--font-metadata)', fontSize: '0.75rem' }}>
-                    <Lock size={13} />
-                    <span>STATUS: DECLINED // STORED PRIVATELY IN PATIENT DOSSIER</span>
+                {associatedSubmission && associatedSubmission.moderationStatus === 'pending' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ffb830', fontFamily: 'var(--font-metadata)', fontSize: '0.75rem' }}>
+                    <span>● STATUS: SUBMISSION PENDING CURATOR REVIEW</span>
+                    <button
+                      type="button"
+                      onClick={() => selectedNoteId && withdrawCommunitySubmission(selectedNoteId)}
+                      className="btn btn-ghost"
+                      style={{ fontSize: '0.68rem', padding: '2px 8px', color: 'var(--gt-muted)', border: '1px solid rgba(255,255,255,0.15)' }}
+                      title="Withdraw copy from community archive"
+                    >
+                      Withdraw Submission
+                    </button>
                   </div>
                 )}
-                {(!activeNote?.submissionStatus || activeNote?.submissionStatus === 'none') && (
+                {associatedSubmission && associatedSubmission.moderationStatus === 'rejected' && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--gt-muted)', fontFamily: 'var(--font-metadata)', fontSize: '0.75rem' }}>
                     <Lock size={13} />
-                    <span>STATUS: PRIVATE PATIENT REFLECTION</span>
+                    <span>STATUS: REVISION REQUESTED // STORED PRIVATELY IN PATIENT NOTEBOOK</span>
+                  </div>
+                )}
+                {!associatedSubmission && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--gt-muted)', fontFamily: 'var(--font-metadata)', fontSize: '0.75rem' }}>
+                    <Lock size={13} />
+                    <span>STATUS: PRIVATE PATIENT REFLECTION (NOT SUBMITTED TO ARCHIVE)</span>
                   </div>
                 )}
               </div>
@@ -936,7 +847,7 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
                   </button>
                 )}
 
-                {selectedNoteId && content.trim().length > 0 && (!activeNote?.submissionStatus || activeNote?.submissionStatus === 'none') && (
+                {selectedNoteId && content.trim().length > 0 && !associatedSubmission && (
                   <button
                     type="button"
                     onClick={() => setSubmissionModalOpen(true)}
@@ -944,7 +855,7 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
                     style={{ gap: '6px', fontSize: '0.8rem' }}
                   >
                     <Send size={14} />
-                    <span>Submit to Community Archive</span>
+                    <span>Submit Copy to Community Archive</span>
                   </button>
                 )}
               </div>
@@ -990,128 +901,22 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
               </div>
             </div>
 
-            {/* Session Master Details & Lineup */}
+            {/* Approved Community Submissions for this Unattended Session */}
             <div className="archival-panel" style={{ padding: 'var(--space-md)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-metadata)', fontSize: '0.7rem', color: 'var(--gt-acid)', letterSpacing: '0.08em', marginBottom: '2px' }}>
-                    CASE REF // {session.sessionCode || 'SPECIAL SESSION'}
-                  </div>
-                  <h2 style={{ fontSize: '1.4rem', fontFamily: 'var(--font-display)', margin: 0 }}>
-                    {session.title}
-                  </h2>
-                </div>
-                <Link
-                  to={`/sessions/${session.id}`}
-                  className="btn btn-ghost"
-                  style={{ fontSize: '0.75rem', gap: '4px' }}
-                >
-                  <Eye size={13} />
-                  <span>Full Session Dossier</span>
-                </Link>
-              </div>
+              <h4 style={{ fontSize: '1.1rem', fontFamily: 'var(--font-display)', marginBottom: '14px' }}>
+                Approved Community Reflections ({communitySubmissions.filter(s => s.sessionId === session.id && s.moderationStatus === 'approved').length})
+              </h4>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '16px' }}>
-                <div style={{ padding: '8px 12px', backgroundColor: 'var(--brand-surface-raised)', borderRadius: '4px', border: '1px solid var(--border-subtle)' }}>
-                  <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontFamily: 'var(--font-metadata)' }}>DATE</div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600 }}>{session.date}</div>
-                </div>
-                <div style={{ padding: '8px 12px', backgroundColor: 'var(--brand-surface-raised)', borderRadius: '4px', border: '1px solid var(--border-subtle)' }}>
-                  <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontFamily: 'var(--font-metadata)' }}>CITY / VENUE</div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 600 }}>{session.venue ? `${session.venue}, ${session.city}` : session.city}</div>
-                </div>
-                <div style={{ padding: '8px 12px', backgroundColor: 'var(--brand-surface-raised)', borderRadius: '4px', border: '1px solid var(--border-subtle)' }}>
-                  <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontFamily: 'var(--font-metadata)' }}>CLASSIFICATION</div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--brand-primary)', fontWeight: 600 }}>{session.branch.toUpperCase()}</div>
-                </div>
-              </div>
-
-              {/* Lineup List */}
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ fontSize: '0.72rem', fontFamily: 'var(--font-metadata)', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                  RECORDED LINEUP ({session.artists.length} ARTISTS)
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {session.artists.map((art, idx) => (
-                    <span
-                      key={idx}
-                      style={{
-                        padding: '4px 8px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '3px',
-                        fontSize: '0.75rem',
-                        color: 'var(--gt-cream)'
-                      }}
-                    >
-                      {art.name} <span style={{ color: 'var(--gt-acid)', fontSize: '0.68rem' }}>({art.role || 'DJ'})</span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Public Community Reflections for this Session */}
-            <div className="archival-panel" style={{ padding: 'var(--space-md)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontFamily: 'var(--font-metadata)', fontSize: '0.74rem', color: 'var(--gt-acid)', fontWeight: 800 }}>
-                    PUBLIC COMMUNITY REFLECTIONS
-                  </span>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--gt-muted)' }}>
-                    ({notes.filter(n => n.sessionId === session.id && (n.visibility === 'public_submission' || n.moderationStatus === 'approved')).length})
-                  </span>
-                </div>
-                <span style={{ fontSize: '0.68rem', fontFamily: 'var(--font-metadata)', color: 'var(--gt-muted)' }}>
-                  FROM VERIFIED ATTENDEES
-                </span>
-              </div>
-
-              {notes.filter(n => n.sessionId === session.id && (n.visibility === 'public_submission' || n.moderationStatus === 'approved')).length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {notes
-                    .filter(n => n.sessionId === session.id && (n.visibility === 'public_submission' || n.moderationStatus === 'approved'))
+              {communitySubmissions.filter(s => s.sessionId === session.id && s.moderationStatus === 'approved').length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {communitySubmissions
+                    .filter(s => s.sessionId === session.id && s.moderationStatus === 'approved')
                     .map(pubNote => (
-                      <div
-                        key={pubNote.id}
-                        className="notebook-ruled-container"
-                        style={{ padding: '0 0 16px 0' }}
-                      >
-                        <div
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: '10px 16px 10px 60px',
-                            borderBottom: '1px solid var(--notebook-line)',
-                            backgroundColor: 'rgba(0,0,0,0.4)',
-                            fontSize: '0.74rem',
-                            fontFamily: 'var(--font-metadata)'
-                          }}
-                        >
-                          <span style={{ color: 'var(--gt-acid)', fontWeight: 700 }}>
-                            {pubNote.authorDisplayName || 'VERIFIED ATTENDEE'}
-                          </span>
-                          <span style={{ color: 'var(--gt-muted)', fontSize: '0.68rem' }}>
-                            PUBLIC NOTE // {pubNote.sessionCode}
-                          </span>
+                      <div key={pubNote.id} className="notebook-ruled-container" style={{ padding: '0 0 12px 0' }}>
+                        <div style={{ padding: '10px 16px', backgroundColor: 'rgba(0,0,0,0.4)', borderBottom: '1px solid var(--notebook-line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span className="case-ref-stamp">{pubNote.isAnonymous ? 'VERIFIED ATTENDEE' : (pubNote.authorDisplayName || 'PATIENT')}</span>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--gt-muted)', fontFamily: 'var(--font-metadata)' }}>CURATED ARCHIVE</span>
                         </div>
-
-                        {/* Taped Polaroids if any */}
-                        {pubNote.polaroids && pubNote.polaroids.length > 0 && (
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', padding: '16px 20px 8px 60px' }}>
-                            {pubNote.polaroids.map((p, pIdx) => (
-                              <div key={p.id || pIdx} className="polaroid-card" style={{ transform: `rotate(${p.rotation}deg)` }}>
-                                <div className="washi-tape-strip washi-tape-top-center"></div>
-                                <div className="polaroid-photo-frame">
-                                  <img src={p.imageUrl} alt={p.caption} />
-                                </div>
-                                <div className="polaroid-caption">{p.caption}</div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
                         <div style={{ padding: '14px 20px 14px 60px', color: 'var(--gt-cream)', fontFamily: 'var(--font-handwriting)', fontSize: '1.2rem', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
                           {pubNote.content}
                         </div>
@@ -1326,10 +1131,10 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
               <div style={{ textAlign: 'center', padding: 'var(--space-lg) 0' }}>
                 <Check size={40} color="var(--gt-acid)" style={{ marginBottom: 'var(--space-sm)' }} />
                 <h3 style={{ fontSize: '1.3rem', fontFamily: 'var(--font-display)', marginBottom: 'var(--space-xs)' }}>
-                  Submitted to Curator Moderation Desk
+                  Submission Delivered for Curation
                 </h3>
                 <p style={{ color: 'var(--gt-muted)', fontSize: '0.85rem' }}>
-                  Group Therapy curators have received your reflection. It is now pending review and will appear in the collective archive if approved.
+                  A distinct community copy was submitted for curation review. Your original private note remains untouched in your personal notebook.
                 </p>
               </div>
             ) : (
@@ -1337,12 +1142,12 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--space-sm)' }}>
                   <AlertTriangle size={20} color="var(--status-pending)" />
                   <h3 style={{ fontSize: '1.25rem', fontFamily: 'var(--font-display)' }}>
-                    Submit Reflection to Community Archive
+                    Submit Copy to Community Archive
                   </h3>
                 </div>
 
                 <p style={{ color: 'var(--gt-muted)', fontSize: '0.85rem', lineHeight: 1.5, marginBottom: 'var(--space-md)' }}>
-                  By default, all Therapy Notes and photos are completely private to your patient dossier. Submitting this reflection requests its inclusion in the public Group Therapy Collective Archive.
+                  Submitting creates a distinct community copy for curation review. Your original private note remains untouched in your notebook. If you edit your private note later, the community copy will not be affected. You can withdraw your submission at any time without deleting your private note.
                 </p>
 
                 <div
@@ -1397,7 +1202,7 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
                     style={{ accentColor: 'var(--gt-acid)', width: '18px', height: '18px', marginTop: '2px' }}
                   />
                   <span style={{ color: 'var(--gt-cream)', lineHeight: 1.4 }}>
-                    I understand this reflection will be reviewed by GT curators and, if approved, published in the collective archive.
+                    I understand this creates an independent copy for GT curators and, if approved, will be displayed in the collective archive.
                   </span>
                 </label>
 
@@ -1435,3 +1240,4 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
     </div>
   );
 };
+export default TherapyNotesPage;

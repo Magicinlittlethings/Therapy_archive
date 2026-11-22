@@ -1,7 +1,17 @@
 import React from 'react';
 
 interface StatusBadgeProps {
-  type: 'attended' | 'pending' | 'followed' | 'verified_lineup' | 'recorded_only' | 'official_release' | 'authorized_embed';
+  type:
+    | 'attended'
+    | 'pending'
+    | 'followed'
+    | 'verified_lineup'
+    | 'recorded_only'
+    | 'official_release'
+    | 'authorized_embed'
+    | 'confirmed'
+    | 'partial_record'
+    | 'awaiting_verification';
   label?: string;
 }
 
@@ -13,7 +23,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ type, label }) => {
 
   switch (type) {
     case 'attended':
-      text = text || 'VERIFIED ATTENDANCE';
+      text = text || 'VERIFIED PHYSICAL ATTENDANCE';
       bg = 'var(--status-verified-bg)';
       color = 'var(--status-verified)';
       border = 'rgba(142, 219, 117, 0.3)';
@@ -31,10 +41,23 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ type, label }) => {
       border = 'var(--border-accent)';
       break;
     case 'verified_lineup':
-      text = text || 'CONFIRMED LINEUP';
-      bg = 'rgba(98, 182, 203, 0.12)';
-      color = 'var(--status-info)';
-      border = 'rgba(98, 182, 203, 0.3)';
+    case 'confirmed':
+      text = text || 'CONFIRMED RECORD';
+      bg = 'rgba(4, 229, 57, 0.12)';
+      color = 'var(--gt-acid)';
+      border = 'rgba(4, 229, 57, 0.3)';
+      break;
+    case 'partial_record':
+      text = text || 'PARTIAL RECORD';
+      bg = 'rgba(233, 180, 76, 0.12)';
+      color = '#e9b44c';
+      border = 'rgba(233, 180, 76, 0.35)';
+      break;
+    case 'awaiting_verification':
+      text = text || 'AWAITING VERIFICATION';
+      bg = 'rgba(255, 255, 255, 0.06)';
+      color = 'var(--gt-muted)';
+      border = 'rgba(255, 255, 255, 0.14)';
       break;
     case 'recorded_only':
       text = text || 'IDENTIFIED RECORDINGS ONLY';
@@ -61,21 +84,19 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ type, label }) => {
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '4px',
-        padding: '3px 8px',
-        fontSize: '0.68rem',
-        fontFamily: 'var(--font-metadata)',
-        fontWeight: 600,
-        textTransform: 'uppercase',
-        letterSpacing: '0.06em',
+        padding: '2px 8px',
         borderRadius: 'var(--radius-xs)',
+        fontSize: '0.68rem',
+        fontWeight: 600,
+        fontFamily: 'var(--font-metadata)',
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
         backgroundColor: bg,
         color: color,
         border: `1px solid ${border}`,
         whiteSpace: 'nowrap'
       }}
     >
-      <span style={{ fontSize: '0.55rem' }}>●</span>
       {text}
     </span>
   );

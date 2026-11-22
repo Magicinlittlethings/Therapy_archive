@@ -125,12 +125,12 @@ export const GTDesktopWorkstation: React.FC<GTDesktopWorkstationProps> = ({ chil
             <span className={`dock-dot ${isBrowserOpen ? 'active' : ''}`} />
           </div>
 
-          {/* Role-Specific: My Dossier (Attendee / Patient / DJ / Admin) */}
-          {persona !== 'visitor' && (
+          {/* Role-Specific: My Dossier (Verified Patient / DJ / Admin only) */}
+          {(persona === 'patient' || persona === 'dj' || persona === 'admin') && (
             <div
               className="os-dock-app"
               onClick={() => navigate('/my-sessions')}
-              title="02_My_Files // Personal Dossier"
+              title="02_My_Files // Personal Dossier (Verified Attendance)"
             >
               <div className="os-dock-icon">
                 <Folder size={22} color="var(--gt-acid)" />
@@ -139,12 +139,12 @@ export const GTDesktopWorkstation: React.FC<GTDesktopWorkstationProps> = ({ chil
             </div>
           )}
 
-          {/* Role-Specific: Therapy Notes (Attendee / Patient / DJ / Admin) */}
-          {persona !== 'visitor' && (
+          {/* Role-Specific: Therapy Notes (Verified Patient / DJ / Admin only) */}
+          {(persona === 'patient' || persona === 'dj' || persona === 'admin') && (
             <div
               className="os-dock-app"
               onClick={() => navigate('/my-sessions/gt-xii/notes')}
-              title="Therapy Notes // Patient Reflection"
+              title="Therapy Notes // Patient Reflection (Private)"
             >
               <div className="os-dock-icon">
                 <FileText size={22} color="#ffd60a" />
@@ -185,7 +185,7 @@ export const GTDesktopWorkstation: React.FC<GTDesktopWorkstationProps> = ({ chil
           <div
             className="os-dock-app"
             onClick={toggleSoundboardPlay}
-            title={isSoundboardPlaying ? 'Mute Soundboard Stream' : 'Enable Soundboard Stream (48kHz)'}
+            title={isSoundboardPlaying ? 'Mute Ambient Soundboard Demo' : 'Play Ambient Soundboard Demo (Web Audio API)'}
           >
             <div className="os-dock-icon">
               {isSoundboardPlaying ? <Volume2 size={22} color="var(--gt-acid)" /> : <VolumeX size={22} color="var(--gt-muted)" />}

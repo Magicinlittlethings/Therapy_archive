@@ -32,7 +32,10 @@ export const AdminPage: React.FC = () => {
     setPersona,
     approveNote,
     rejectNote,
-    unflagNote
+    unflagNote,
+    attendanceScenarios,
+    activeScenarioId,
+    selectAttendanceScenario
   } = useStore();
 
   const isDjMode = persona === 'dj';
@@ -496,9 +499,66 @@ export const AdminPage: React.FC = () => {
                 </div>
               </div>
 
-              <button onClick={handleSimulateImport} className="btn btn-primary">
+              <button onClick={handleSimulateImport} className="btn btn-primary" style={{ marginBottom: '24px' }}>
                 Simulate Ingestion &amp; Reconcile Attendance
               </button>
+
+              {/* 6 Predictable Attendance Demonstration Scenarios */}
+              <div style={{ marginTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '16px' }}>
+                <div style={{ fontFamily: 'var(--font-metadata)', fontSize: '0.72rem', color: 'var(--gt-acid)', letterSpacing: '0.08em', marginBottom: '4px' }}>
+                  PREDICTABLE VERIFICATION DEMO SCENARIOS
+                </div>
+                <h4 style={{ fontSize: '1.05rem', fontFamily: 'var(--font-display)', color: 'var(--gt-cream)', marginBottom: '6px' }}>
+                  Test How The Platform Evaluates Different Ticket States
+                </h4>
+                <p style={{ color: 'var(--gt-muted)', fontSize: '0.78rem', marginBottom: '14px' }}>
+                  Click "Test This Flow" to observe how the active persona and permissions change based on door scan records.
+                </p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
+                  {attendanceScenarios.map(sc => {
+                    const isActive = activeScenarioId === sc.id;
+                    return (
+                      <div
+                        key={sc.id}
+                        style={{
+                          padding: '10px 14px',
+                          borderRadius: '4px',
+                          border: `1px solid ${isActive ? 'var(--gt-acid)' : 'rgba(255, 255, 255, 0.08)'}`,
+                          backgroundColor: isActive ? 'rgba(4, 229, 57, 0.06)' : 'rgba(255, 255, 255, 0.02)',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                          gap: '10px'
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: '240px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isActive ? 'var(--gt-acid)' : 'var(--gt-cream)' }}>
+                              {sc.name}
+                            </span>
+                            <span style={{ fontSize: '0.64rem', fontFamily: 'var(--font-metadata)', color: sc.eligibilityStatus === 'Verified Patient' ? 'var(--gt-acid)' : '#ffb830', backgroundColor: 'rgba(255,255,255,0.05)', padding: '1px 6px', borderRadius: '3px' }}>
+                              {sc.eligibilityStatus.toUpperCase()}
+                            </span>
+                          </div>
+                          <p style={{ fontSize: '0.76rem', color: 'var(--gt-muted)', margin: '2px 0 0 0' }}>
+                            {sc.title} &bull; <strong style={{ color: 'var(--gt-cream)' }}>{sc.doorCheckInSummary}</strong>
+                          </p>
+                        </div>
+
+                        <button
+                          onClick={() => selectAttendanceScenario(sc.id)}
+                          className={isActive ? 'btn btn-primary' : 'btn btn-outline-neon'}
+                          style={{ fontSize: '0.72rem', padding: '4px 10px', minHeight: '28px' }}
+                        >
+                          {isActive ? '✓ Active Test State' : 'Test This Flow'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -543,11 +603,11 @@ export const AdminPage: React.FC = () => {
                       </div>
 
                       <span style={{ fontSize: '0.75rem', color: 'var(--gt-muted)', fontFamily: 'var(--font-metadata)' }}>
-                        SUBMITTED BY: {n.isAnonymousSubmission ? 'Verified Attendee (Anonymous)' : (n.authorDisplayName || 'Patient')}
+                        SUBMITTED BY: {(n.isAnonymousSubmission || n.isAnonymous) ? 'Verified Attendee (Anonymous)' : (n.authorDisplayName || 'Patient')}
                       </span>
                     </div>
 
-                    {n.polaroids && n.polaroids.length > 0 && n.includePolaroidsInSubmission !== false && (
+                    {n.polaroids && n.polaroids.length > 0 && n.includePolaroidsInSubmission !== false && n.includePolaroids !== false && (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', padding: '16px 20px', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
                         {n.polaroids.map((pol, idx) => (
                           <div key={pol.id || idx} className="polaroid-card" style={{ transform: `rotate(${pol.rotation}deg)` }}>

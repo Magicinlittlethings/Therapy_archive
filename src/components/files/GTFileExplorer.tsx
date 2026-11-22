@@ -217,9 +217,15 @@ export const GTFileExplorer: React.FC<GTFileExplorerProps> = ({ initialPath = '/
         const sessionMats = materials.filter(m => m.sessionId === s.id);
         const totalItems = sessionMats.length + sessionNotes.length + 1; // +1 for info.txt
 
-        let badge = 'Public';
+        let badge = 'Confirmed';
         let badgeType: FileSystemItem['badgeType'] = 'public';
-        if (attendance === 'attended') {
+        if (s.archivalStatus === 'awaiting_verification') {
+          badge = 'Awaiting Verification';
+          badgeType = 'pending';
+        } else if (s.archivalStatus === 'partial_record') {
+          badge = 'Partial Record';
+          badgeType = 'public';
+        } else if (attendance === 'attended') {
           badge = 'Verified Attended';
           badgeType = 'verified';
         } else if (attendance === 'pending_verification') {
@@ -1388,7 +1394,7 @@ export const GTFileExplorer: React.FC<GTFileExplorerProps> = ({ initialPath = '/
                         style={{ padding: '8px 18px', minHeight: '34px', gap: '6px' }}
                       >
                         {isPlayingAudio ? <Pause size={14} /> : <Play size={14} />}
-                        <span>{isPlayingAudio ? 'Pause Live Stream' : 'Play Soundboard Master'}</span>
+                        <span>{isPlayingAudio ? 'Pause Synth Demo' : 'Play Audio Preview (Web Audio Synth Demo)'}</span>
                       </button>
 
                       <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-metadata)', color: 'var(--gt-muted)' }}>

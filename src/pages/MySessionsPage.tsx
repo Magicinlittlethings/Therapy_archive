@@ -1,31 +1,32 @@
 import React from 'react';
 import { useStore } from '../context/StoreContext';
 import { GTFileExplorer } from '../components/files/GTFileExplorer';
-import { Lock, UserCheck } from 'lucide-react';
+import { Lock, UserCheck, ShieldAlert, Sparkles } from 'lucide-react';
 
 export const MySessionsPage: React.FC = () => {
-  const { persona, setPersona } = useStore();
+  const { persona, setPersona, openVerifyModal } = useStore();
 
-  if (persona === 'visitor') {
+  if (persona === 'visitor' || persona === 'follower') {
     return (
       <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-2xl)' }}>
         <div
           style={{
-            maxWidth: '460px',
+            maxWidth: '520px',
             textAlign: 'center',
-            padding: 'var(--space-2xl)',
-            backgroundColor: 'rgba(20, 20, 20, 0.8)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
+            padding: '32px 28px',
+            backgroundColor: 'rgba(12, 16, 12, 0.94)',
+            border: '1px solid rgba(255, 255, 255, 0.14)',
             borderRadius: 'var(--radius-md)',
-            boxShadow: '0 16px 40px rgba(0, 0, 0, 0.7)'
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(4, 229, 57, 0.08)'
           }}
         >
           <div
             style={{
-              width: '52px',
-              height: '52px',
+              width: '56px',
+              height: '56px',
               borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.08)',
+              backgroundColor: 'rgba(4, 229, 57, 0.08)',
+              border: '1px solid rgba(4, 229, 57, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -33,22 +34,52 @@ export const MySessionsPage: React.FC = () => {
               color: 'var(--gt-acid)'
             }}
           >
-            <Lock size={24} />
+            <Lock size={26} />
           </div>
+
+          <div className="case-ref-stamp" style={{ marginBottom: '8px' }}>
+            PATIENT DOSSIER // RESTRICTED ACCESS
+          </div>
+
           <h2 style={{ fontSize: '1.4rem', fontFamily: 'var(--font-display)', marginBottom: '8px', color: 'var(--gt-cream)' }}>
-            Personal Dossier Locked
+            Physical Attendance Verification Required
           </h2>
-          <p style={{ color: 'var(--gt-muted)', fontSize: '0.85rem', lineHeight: 1.5, marginBottom: '20px' }}>
-            You are currently viewing as a <strong>Public Visitor</strong>. Switch user account to access verified attendance history and private therapy notes.
+
+          <p style={{ color: 'var(--gt-muted)', fontSize: '0.86rem', lineHeight: 1.6, marginBottom: '22px' }}>
+            {persona === 'follower' ? (
+              <>
+                You are registered as a <strong>Community Follower</strong>. A financial ticket purchase or registered account alone does not grant patient access. Physical attendance verified through a door check-in scan or verified guestlist entry is required to unlock your Personal Dossier and Therapy Notes.
+              </>
+            ) : (
+              <>
+                You are currently exploring as an unauthenticated <strong>Public Visitor</strong>. The Personal Dossier contains confidential session check-ins, personal memory files, and private Therapy Notes. Verified physical attendance is required.
+              </>
+            )}
           </p>
-          <button
-            onClick={() => setPersona('patient')}
-            className="btn btn-primary"
-            style={{ fontSize: '0.82rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-          >
-            <UserCheck size={16} />
-            <span>Switch to Patient</span>
-          </button>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <button
+              onClick={() => setPersona('patient')}
+              className="btn btn-primary"
+              style={{ fontSize: '0.82rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            >
+              <UserCheck size={16} />
+              <span>Simulate Verified Patient (Lami Adeyemi)</span>
+            </button>
+
+            <button
+              onClick={openVerifyModal}
+              className="btn btn-outline-neon"
+              style={{ fontSize: '0.8rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            >
+              <Sparkles size={14} />
+              <span>Interactive Ticket Verification Demo...</span>
+            </button>
+          </div>
+
+          <div style={{ marginTop: '18px', fontSize: '0.7rem', color: 'var(--gt-muted)', fontFamily: 'var(--font-metadata)' }}>
+            PROTOTYPE NOTICE // In production, attendance is matched to your ticket purchase email.
+          </div>
         </div>
       </div>
     );
