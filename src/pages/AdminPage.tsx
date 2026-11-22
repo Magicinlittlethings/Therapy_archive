@@ -654,9 +654,10 @@ export const AdminPage: React.FC = () => {
                       <button
                         className="btn btn-primary"
                         style={{ fontSize: '0.75rem', minHeight: '32px' }}
-                        onClick={() => approveNote(n.id, 'Approved for Group Therapy Community Archive.')}
+                        onClick={() => approveNote(n.id, 'Approved for Members-Only Community Archive (Not Public Editorial).')}
+                        title="Admits into members-only archive. Public editorial requires separate author consent."
                       >
-                        Approve for Collective Archive
+                        Approve for Members Archive
                       </button>
                     </div>
                   </div>

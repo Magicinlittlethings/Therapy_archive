@@ -169,7 +169,7 @@ export const TicketVerificationModal: React.FC = () => {
         >
           <AlertCircle size={14} style={{ flexShrink: 0 }} />
           <span>
-            <strong>DEMO SIMULATION:</strong> Physical door check-in scan is required to qualify as a Verified Patient. Choose a scenario below to observe how the platform reconciles attendance.
+            <strong>DEMO SIMULATION:</strong> Browser <code>localStorage</code> is not secure storage and does not provide production-grade access control. Physical door scan evidence is strictly required to qualify as a Verified Patient.
           </span>
         </div>
 
@@ -302,11 +302,17 @@ export const TicketVerificationModal: React.FC = () => {
               </form>
 
               <div style={{ padding: '12px', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '6px', fontSize: '0.75rem', color: 'var(--gt-muted)', lineHeight: 1.4 }}>
-                <strong>Test Accounts in Seed Data:</strong>
-                <ul style={{ margin: '6px 0 0 16px', padding: 0 }}>
-                  <li><code>lami@grouptherapy.live</code> (Primary purchaser, door scanned &bull; Patient)</li>
-                  <li><code>chidi@grouptherapy.live</code> (Group purchaser, door scanned &bull; Patient)</li>
-                  <li><code>alex@grouptherapy.live</code> (Purchaser no-show, zero door scan &bull; Follower)</li>
+                <strong>Test Verification Accounts in Seed Data:</strong>
+                <ul style={{ margin: '6px 0 0 16px', padding: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  <li><code>lami@grouptherapy.live</code> (Scenario 1: Primary purchaser, door scanned &bull; Patient)</li>
+                  <li><code>chidi@grouptherapy.live</code> (Scenario 2: Multi-ticket buyer, door scanned &bull; Patient + 2 passes)</li>
+                  <li><code>companion.noscan@grouptherapy.live</code> (Scenario 2b: Group pass claimed, zero door scan &bull; Follower)</li>
+                  <li><code>duplicate@grouptherapy.live</code> (Scenario 2c: Duplicate claim on consumed ticket &bull; Rejected)</li>
+                  <li><code>revoked@grouptherapy.live</code> (Scenario 2d: Reassigned / revoked ticket &bull; Invalidated)</li>
+                  <li><code>alex@grouptherapy.live</code> (Scenario 3: Purchaser no-show, zero door scan &bull; Follower)</li>
+                  <li><code>ngozi@grouptherapy.live</code> (Scenario 4: Door guest list check-in &bull; Patient)</li>
+                  <li><code>tunde@grouptherapy.live</code> (Scenario 5: Historical cash claim &bull; Awaiting Curator Review)</li>
+                  <li><code>lami.work@gmail.com</code> (Scenario 6: Secondary email consolidated via OTP &bull; Patient)</li>
                   <li><code>other@gmail.com</code> (Unrecognized email &bull; Options shown)</li>
                 </ul>
               </div>

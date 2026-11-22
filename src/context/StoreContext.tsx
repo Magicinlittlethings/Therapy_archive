@@ -566,6 +566,37 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         message: 'Ticket purchase confirmed for GT-VIII, but no physical door check-in was recorded. Registered as Community Follower.',
         persona: 'follower' as DemoPersona
       };
+    } else if (cleanEmail === 'tunde@grouptherapy.live') {
+      setPersonaState('follower');
+      localStorage.setItem(STORAGE_KEYS.PERSONA, 'follower');
+      setAttendances({
+        'gt-iv': { sessionId: 'gt-iv', state: 'pending_verification', checkInSource: 'curator_archival' }
+      });
+      return {
+        success: true,
+        message: 'Historical cash entry claim on file for GT-IV. Awaiting curator review in Curator Terminal. Access remains Community Follower until verification.',
+        persona: 'follower' as DemoPersona
+      };
+    } else if (cleanEmail.includes('noscan') || cleanEmail.includes('unscanned')) {
+      setPersonaState('follower');
+      localStorage.setItem(STORAGE_KEYS.PERSONA, 'follower');
+      return {
+        success: true,
+        message: 'Companion claim pass registered, but no physical door check-in scan was recorded at the venue. Physical attendance evidence is strictly required to unlock patient privileges. Status remains Community Follower.',
+        persona: 'follower' as DemoPersona
+      };
+    } else if (cleanEmail.includes('duplicate') || cleanEmail.includes('used') || cleanEmail.includes('claimed')) {
+      return {
+        success: false,
+        message: 'Duplicate claim rejected: This ticket claim pass has already been claimed by another attendee and consumed. Duplicate claims are prevented.',
+        persona: persona
+      };
+    } else if (cleanEmail.includes('revoked') || cleanEmail.includes('reassigned')) {
+      return {
+        success: false,
+        message: 'Ticket claim invalidated: This ticket was reassigned or revoked prior to door check-in. Zero patient privileges granted.',
+        persona: persona
+      };
     } else {
       // Unrecognized email: offer follower registration
       setPersonaState('follower');

@@ -301,26 +301,35 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
 
   return (
     <div style={{ padding: '28px 32px 80px', maxWidth: '1400px', margin: '0 auto', overflowY: 'auto', height: '100%', boxSizing: 'border-box' }}>
-      {/* Prototype Privacy Notice Banner */}
+      {/* Prototype Privacy & Security Notice Banner */}
       <div
         style={{
-          padding: '10px 16px',
-          backgroundColor: 'rgba(4, 229, 57, 0.05)',
-          border: '1px solid rgba(4, 229, 57, 0.25)',
-          borderRadius: '4px',
+          padding: '12px 18px',
+          backgroundColor: 'rgba(255, 184, 48, 0.08)',
+          border: '1px solid rgba(255, 184, 48, 0.35)',
+          borderRadius: '6px',
           display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          fontSize: '0.75rem',
+          alignItems: 'flex-start',
+          gap: '12px',
+          fontSize: '0.76rem',
           fontFamily: 'var(--font-metadata)',
           color: 'var(--gt-cream)',
-          marginBottom: '16px'
+          marginBottom: '16px',
+          lineHeight: 1.5
         }}
       >
-        <Lock size={14} color="var(--gt-acid)" style={{ flexShrink: 0 }} />
-        <span>
-          <strong style={{ color: 'var(--gt-acid)' }}>PROTOTYPE NOTICE:</strong> Private notes are stored strictly in your browser's local sandbox (<code>localStorage</code>). In production, private reflections are client-encrypted with your private session key and cannot be accessed by resident DJs, curators, or other attendees.
-        </span>
+        <Lock size={16} color="#ffb830" style={{ flexShrink: 0, marginTop: '2px' }} />
+        <div>
+          <div style={{ color: '#ffb830', fontWeight: 800, marginBottom: '2px', letterSpacing: '0.04em' }}>
+            PROTOTYPE NOTICE // LOCALSTORAGE IS NOT SECURE STORAGE
+          </div>
+          <div>
+            This demonstration runs entirely in your browser using <code>localStorage</code>, which <strong>is not secure storage and does not provide production-grade privacy, encryption, or access control</strong>.
+          </div>
+          <div style={{ color: 'var(--gt-muted)', marginTop: '4px', fontSize: '0.72rem' }}>
+            <strong>Target Production Architecture:</strong> Private reflections will be protected via backend authorization and PostgreSQL Row-Level Security (RLS), encryption at rest and in transit (TLS 1.3 / AES-256), protected attachment object storage with signed URLs, restricted administrative access, and immutable audit logs. (Client-side / end-to-end encryption is treated as a separate future design track, not implemented via temporary session tokens).
+          </div>
+        </div>
       </div>
 
       {/* OS Notes App Toolbar */}
@@ -1162,7 +1171,7 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
                     marginBottom: 'var(--space-md)'
                   }}
                 >
-                  CURATION NOTICE: Submissions are reviewed by GT curators before publication. Submitting a reflection does not guarantee approval or publication.
+                  MEMBERS-ONLY ARCHIVE NOTICE: Submissions are reviewed by GT curators for inclusion strictly in the members-only community archive. Approval makes this reflection visible only to verified attendees. It does not publish your writing publicly. Public editorial publication (e.g. for marketing or session recaps) is a separate workflow requiring your explicit consent for the specific publication destination.
                 </div>
 
                 {/* Attribution & Attachment Preferences */}
@@ -1202,7 +1211,7 @@ The percussions were heavy. Realizing someone in front of me needed space to dan
                     style={{ accentColor: 'var(--gt-acid)', width: '18px', height: '18px', marginTop: '2px' }}
                   />
                   <span style={{ color: 'var(--gt-cream)', lineHeight: 1.4 }}>
-                    I understand this creates an independent copy for GT curators and, if approved, will be displayed in the collective archive.
+                    I understand this creates an independent copy for GT curators to review for the members-only archive. It will not be published publicly without my separate explicit consent.
                   </span>
                 </label>
 
