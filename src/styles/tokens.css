@@ -1,0 +1,110 @@
+/**
+ * GROUP THERAPY OFFICIAL DESIGN SYSTEM TOKENS
+ * Extracted directly from live brand architecture at grouptherapy.live
+ * Combined with tactile archival case-file hierarchy.
+ */
+
+:root, html[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Official Brand Palette (grouptherapy.live) */
+  --gt-void: #030303;          /* Deep pitch black void */
+  --gt-charcoal: #0a0a0a;      /* Sub-surface / cards */
+  --gt-slate: #121212;         /* Raised dossier surface */
+  --gt-elevated: #1a1a1a;      /* Interactive panels & modals */
+  --gt-cream: #f8f8f4;         /* Primary clean off-white text */
+  --gt-muted: #dcd8ce;         /* High-contrast crisp platinum secondary text */
+  --gt-border: rgba(255, 255, 255, 0.14); /* Clean distinct separator */
+  --gt-glass: rgba(10, 10, 10, 0.85);    /* Translucent glass backdrop */
+  --gt-scrim: #030303;
+  --gt-on-media: #f3efe6;
+  
+  /* Electric Acid Accent (Official Live GT Hex) */
+  --gt-acid: #04e539;          /* Core electric acid green */
+  --gt-acid-bright: #2ef55c;   /* High-intensity neon green */
+  --gt-acid-dim: rgba(4, 229, 57, 0.12);
+  --gt-acid-glow: rgba(4, 229, 57, 0.35);
+
+  /* Secondary Cultural Colorways */
+  --gt-orange: #ff5c2e;
+  --gt-red: #e42335;
+  --gt-purple: #8b5de5;
+  --gt-ink: #0a0a0a;
+
+  /* Archival Dossier Elements */
+  --dossier-manila: #dcd7c9;
+  --dossier-stamp: #04e539;
+  --dossier-tape: rgba(243, 239, 230, 0.12);
+  --dossier-confidential: #ff5c2e;
+
+  /* Backward Compatibility Aliases */
+  --brand-primary: var(--gt-acid);
+  --brand-primary-dim: var(--gt-acid-dim);
+  --brand-primary-glow: var(--gt-acid-glow);
+  --brand-bg: var(--gt-void);
+  --brand-surface: var(--gt-charcoal);
+  --brand-surface-raised: var(--gt-slate);
+  --brand-surface-hover: var(--gt-elevated);
+  --text-primary: var(--gt-cream);
+  --text-secondary: var(--gt-muted);
+  --text-muted: #dcd8ce;
+  --border-default: var(--gt-border);
+  --border-subtle: rgba(255, 255, 255, 0.12);
+  --border-accent: rgba(4, 229, 57, 0.45);
+
+  /* Status Indicators */
+  --status-verified: #04e539;
+  --status-verified-bg: rgba(4, 229, 57, 0.12);
+  --status-pending: #ffb830;
+  --status-pending-bg: rgba(255, 184, 48, 0.12);
+  --status-unverified: #c0bcb3;
+  --status-unverified-bg: rgba(156, 150, 140, 0.12);
+  --status-error: #e42335;
+  --status-error-bg: rgba(228, 35, 53, 0.12);
+  --status-info: #8b5de5;
+  --status-info-bg: rgba(139, 93, 229, 0.12);
+
+  /* Typography */
+  --font-display: 'Syne', system-ui, sans-serif;
+  --font-body: 'Manrope', system-ui, sans-serif;
+  --font-ui: 'Manrope', system-ui, sans-serif;
+  --font-metadata: 'JetBrains Mono', monospace;
+  --font-handwriting: 'Caveat', cursive, sans-serif;
+
+  /* Therapy Notes & Lined Notebook Variables */
+  --notebook-line: rgba(255, 255, 255, 0.08);
+  --notebook-line-glow: rgba(4, 229, 57, 0.2);
+  --notebook-margin: rgba(228, 35, 53, 0.4);
+  --polaroid-card-bg: #f8f6f0;
+  --polaroid-card-text: #161514;
+  --washi-tape-bg: rgba(243, 239, 230, 0.32);
+  --washi-tape-border: rgba(255, 255, 255, 0.2);
+
+  /* Spacing Scale */
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* Border Radii */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Shadows & Glows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.7);
+  --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.85);
+  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.95);
+  --shadow-acid-glow: 0 0 35px rgba(4, 229, 57, 0.35);
+
+  /* Motion Curves */
+  --transition-fast: 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-smooth: 400ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
